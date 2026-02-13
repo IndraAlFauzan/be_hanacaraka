@@ -3,37 +3,29 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Evaluation;
+use App\Http\Requests\Api\V1\SubmitDrawingRequest;
 use App\Models\ChallengeResult;
+use App\Models\Evaluation;
 use App\Services\DrawingEvaluationService;
+use App\Services\FileUploadService;
 use App\Services\GamificationService;
 use App\Services\ProgressService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 
 class ChallengeController extends Controller
 {
-    protected $drawingService;
-    protected $gamificationService;
-    protected $progressService;
-
     public function __construct(
-        DrawingEvaluationService $drawingService,
-        GamificationService $gamificationService,
-        ProgressService $progressService
-    ) {
-        $this->drawingService = $drawingService;
-        $this->gamificationService = $gamificationService;
-        $this->progressService = $progressService;
-    }
+        protected DrawingEvaluationService $drawingService,
+        protected GamificationService $gamificationService,
+        protected ProgressService $progressService,
+        protected FileUploadService $fileUploadService
+    ) {}
 
-    public function submitDrawing(Request $request, $evaluationId)
+    /**
+     * Submit user drawing for evaluation
+     */
+    public function submitDrawing(SubmitDrawingRequest $request, int $evaluationId): JsonResponse
     {
-        $request->validate([
-            'drawing_image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
-        ]);
-
         $evaluation = Evaluation::with('stage')->findOrFail($evaluationId);
         $user = $request->user();
 
@@ -44,18 +36,23 @@ class ChallengeController extends Controller
 
         // Upload file
         $file = $request->file('drawing_image');
-        $filename = 'drawing_' . $user->id . '_' . time() . '_' . Str::random(10) . '.' . $file->extension();
-        $path = $file->storeAs('public/drawings', $filename);
-        $userDrawingUrl = Storage::url($path);
+        $userDrawingUrl = $this->fileUploadService->uploadImage(
+            $file,
+            'drawings',
+            'drawing_' . $user->id . '_'
+        );
 
         try {
-            // Call ML service
+            // Call ML service for evaluation
             $similarityScore = $this->drawingService->evaluateDrawing(
                 $evaluation->reference_image_url,
                 url($userDrawingUrl)
             );
 
-            $isPassed = $this->drawingService->isPassed($similarityScore, $evaluation->min_similarity_score);
+            $isPassed = $this->drawingService->isPassed(
+                $similarityScore,
+                $evaluation->min_similarity_score
+            );
 
             // Save result
             $result = ChallengeResult::create([
@@ -67,34 +64,54 @@ class ChallengeController extends Controller
                 'attempt_number' => $attemptNumber,
             ]);
 
-            $response = [
-                'result_id' => $result->id,
-                'similarity_score' => $similarityScore,
-                'is_passed' => $isPassed,
-                'xp_earned' => 0,
-                'level_up' => false,
-                'new_badges' => [],
-                'next_stage_unlocked' => null,
-            ];
+            $response = $this->buildResponse($result, $similarityScore, $isPassed);
 
+            // Handle success rewards
             if ($isPassed) {
-                // Add XP
-                $xpResult = $this->gamificationService->addXP($user->id, $evaluation->stage->xp_reward);
-                $response['xp_earned'] = $evaluation->stage->xp_reward;
-                $response['level_up'] = $xpResult['level_up'];
-                $response['new_badges'] = $xpResult['new_badges'];
-
-                // Complete stage
-                $progressResult = $this->progressService->completeStage($user->id, $evaluation->stage_id);
-                $response['next_stage_unlocked'] = $progressResult['next_stage_unlocked'];
+                $this->handleSuccess($user, $evaluation, $response);
             }
 
-            return response()->json(['success' => true, 'data' => $response]);
+            return response()->json([
+                'success' => true,
+                'data' => $response,
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Build base response array
+     */
+    private function buildResponse(ChallengeResult $result, float $similarityScore, bool $isPassed): array
+    {
+        return [
+            'result_id' => $result->id,
+            'similarity_score' => $similarityScore,
+            'is_passed' => $isPassed,
+            'xp_earned' => 0,
+            'level_up' => false,
+            'new_badges' => [],
+            'next_stage_unlocked' => null,
+        ];
+    }
+
+    /**
+     * Handle success rewards
+     */
+    private function handleSuccess($user, Evaluation $evaluation, array &$response): void
+    {
+        // Add XP
+        $xpResult = $this->gamificationService->addXP($user->id, $evaluation->stage->xp_reward);
+        $response['xp_earned'] = $evaluation->stage->xp_reward;
+        $response['level_up'] = $xpResult['level_up'];
+        $response['new_badges'] = $xpResult['new_badges'];
+
+        // Complete stage
+        $progressResult = $this->progressService->completeStage($user->id, $evaluation->stage_id);
+        $response['next_stage_unlocked'] = $progressResult['next_stage_unlocked'];
     }
 }

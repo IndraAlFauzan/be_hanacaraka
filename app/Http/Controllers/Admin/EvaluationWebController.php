@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreEvaluationRequest;
+use App\Http\Requests\Admin\UpdateEvaluationRequest;
 use App\Models\Evaluation;
 use App\Models\Stage;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class EvaluationWebController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Evaluation::with(['stage.level'])
             ->withCount('submissions');
@@ -19,60 +23,60 @@ class EvaluationWebController extends Controller
         }
 
         $evaluations = $query->orderBy('stage_id')->paginate(20);
-        $stages = Stage::with('level')->orderBy('level_id')->orderBy('stage_number')->get();
+        $stages = Stage::with('level')
+            ->orderBy('level_id')
+            ->orderBy('stage_number')
+            ->get();
 
         return view('admin.evaluations.index', compact('evaluations', 'stages'));
     }
 
-    public function create()
+    public function create(): View
     {
-        $stages = Stage::with('level')->orderBy('level_id')->orderBy('stage_number')->get();
+        $stages = Stage::with('level')
+            ->orderBy('level_id')
+            ->orderBy('stage_number')
+            ->get();
+
         return view('admin.evaluations.create', compact('stages'));
     }
 
-    public function store(Request $request)
+    public function store(StoreEvaluationRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'stage_id' => 'required|exists:stages,id',
-            'character_target' => 'required|string|max:10',
-            'reference_image_url' => 'required|url|max:255',
-            'min_similarity_score' => 'required|numeric|min:0|max:100',
-        ]);
+        Evaluation::create($request->validated());
 
-        Evaluation::create($validated);
-        return redirect()->route('admin.evaluations.index')
+        return redirect()
+            ->route('admin.evaluations.index')
             ->with('success', 'Evaluasi berhasil ditambahkan!');
     }
 
-    public function edit(string $id)
+    public function edit(string $id): View
     {
         $evaluation = Evaluation::with(['stage.level', 'submissions.user'])->findOrFail($id);
-        $stages = Stage::with('level')->orderBy('level_id')->orderBy('stage_number')->get();
+        $stages = Stage::with('level')
+            ->orderBy('level_id')
+            ->orderBy('stage_number')
+            ->get();
+
         return view('admin.evaluations.edit', compact('evaluation', 'stages'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateEvaluationRequest $request, string $id): RedirectResponse
     {
         $evaluation = Evaluation::findOrFail($id);
+        $evaluation->update($request->validated());
 
-        $validated = $request->validate([
-            'stage_id' => 'required|exists:stages,id',
-            'character_target' => 'required|string|max:10',
-            'reference_image_url' => 'required|url|max:255',
-            'min_similarity_score' => 'required|numeric|min:0|max:100',
-        ]);
-
-        $evaluation->update($validated);
-        return redirect()->route('admin.evaluations.index')
+        return redirect()
+            ->route('admin.evaluations.index')
             ->with('success', 'Evaluasi berhasil diperbarui!');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
-        $evaluation = Evaluation::findOrFail($id);
-        $evaluation->delete();
+        Evaluation::findOrFail($id)->delete();
 
-        return redirect()->route('admin.evaluations.index')
+        return redirect()
+            ->route('admin.evaluations.index')
             ->with('success', 'Evaluasi berhasil dihapus!');
     }
 }

@@ -11,12 +11,12 @@ use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\ChallengeController;
 use App\Http\Controllers\Api\V1\ProgressController;
 use App\Http\Controllers\Api\V1\LeaderboardController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\TranslationController;
-use App\Http\Controllers\FileUploadController;
-use App\Http\Controllers\BadgeController;
-use App\Http\Controllers\HealthController;
+use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\AdminDashboardController;
+use App\Http\Controllers\Api\V1\TranslationController;
+use App\Http\Controllers\Api\V1\FileUploadController;
+use App\Http\Controllers\Api\V1\BadgeController;
+use App\Http\Controllers\Api\V1\HealthController;
 
 // API Version 1
 Route::prefix('v1')->group(function () {
@@ -49,21 +49,23 @@ Route::prefix('v1')->group(function () {
         // Quizzes - All authenticated users
         Route::get('/stages/{stageId}/quiz', [QuizController::class, 'show']);
 
-        // Progress - User specific
-        Route::get('/users/{userId}/progress', [ProgressController::class, 'show']);
+        // User Profile - Self (no ID needed, uses token)
+        Route::get('/profile', [UserController::class, 'profile']);
+        Route::put('/profile', [UserController::class, 'update']);
+        Route::post('/profile/avatar', [UserController::class, 'uploadAvatar']);
+
+        // User Progress - Self (no ID needed, uses token)
+        Route::get('/progress', [ProgressController::class, 'myProgress']);
+
+        // User Badges - Self (no ID needed, uses token)
+        Route::get('/my-badges', [BadgeController::class, 'myBadges']);
 
         // Leaderboard - All authenticated users
         Route::get('/leaderboard/weekly', [LeaderboardController::class, 'weekly']);
         Route::get('/leaderboard/all-time', [LeaderboardController::class, 'allTime']);
 
-        // Badges - All authenticated users
+        // Badges - All authenticated users (list all available badges)
         Route::get('/badges', [BadgeController::class, 'index']);
-        Route::get('/users/{userId}/badges', [BadgeController::class, 'userBadges']);
-
-        // User Profile - Self or Admin
-        Route::get('/users/{id}', [UserController::class, 'show']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
-        Route::post('/users/{id}/upload-avatar', [UserController::class, 'uploadAvatar']);
 
         // Translation Tool - All authenticated users
         Route::post('/translate/latin-to-javanese', [TranslationController::class, 'latinToJavanese']);
@@ -85,6 +87,9 @@ Route::prefix('v1')->group(function () {
             // Dashboard & User Management
             Route::get('/dashboard', [AdminDashboardController::class, 'dashboard']);
             Route::get('/users', [AdminDashboardController::class, 'users']);
+            Route::get('/users/{id}', [UserController::class, 'show']);
+            Route::get('/users/{userId}/progress', [ProgressController::class, 'show']);
+            Route::get('/users/{userId}/badges', [BadgeController::class, 'userBadges']);
 
             // File Upload
             Route::post('/upload/image', [FileUploadController::class, 'uploadImage']);

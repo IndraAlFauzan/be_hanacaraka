@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Stage;
+use App\Http\Requests\Admin\StoreStageRequest;
+use App\Http\Requests\Admin\UpdateStageRequest;
 use App\Models\Level;
+use App\Models\Stage;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class StageWebController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Stage::with('level')
             ->withCount(['materials', 'quizzes', 'evaluations']);
@@ -21,84 +22,62 @@ class StageWebController extends Controller
             $query->where('level_id', $request->level_id);
         }
 
-        $stages = $query->orderBy('level_id')->orderBy('stage_number')->paginate(20);
+        $stages = $query->orderBy('level_id')
+            ->orderBy('stage_number')
+            ->paginate(20);
+
         $levels = Level::orderBy('level_number')->get();
 
         return view('admin.stages.index', compact('stages', 'levels'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(): View
     {
         $levels = Level::orderBy('level_number')->get();
+
         return view('admin.stages.create', compact('levels'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreStageRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'level_id' => 'required|exists:levels,id',
-            'stage_number' => 'required|integer|min:1',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'xp_reward' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
+        $validated = $request->validated();
         $validated['is_active'] = $request->has('is_active');
 
         Stage::create($validated);
-        return redirect()->route('admin.stages.index')
+
+        return redirect()
+            ->route('admin.stages.index')
             ->with('success', 'Stage berhasil ditambahkan!');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function edit(string $id): View
     {
         $stage = Stage::with(['materials', 'quizzes', 'evaluations'])->findOrFail($id);
         $levels = Level::orderBy('level_number')->get();
+
         return view('admin.stages.edit', compact('stage', 'levels'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(UpdateStageRequest $request, string $id): RedirectResponse
     {
         $stage = Stage::findOrFail($id);
 
-        $validated = $request->validate([
-            'level_id' => 'required|exists:levels,id',
-            'stage_number' => 'required|integer|min:1',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'xp_reward' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
+        $validated = $request->validated();
         $validated['is_active'] = $request->has('is_active');
 
         $stage->update($validated);
-        return redirect()->route('admin.stages.index')
+
+        return redirect()
+            ->route('admin.stages.index')
             ->with('success', 'Stage berhasil diperbarui!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
-        $stage = Stage::findOrFail($id);
-        $stage->delete();
+        Stage::findOrFail($id)->delete();
 
-        return redirect()->route('admin.stages.index')
+        return redirect()
+            ->route('admin.stages.index')
             ->with('success', 'Stage berhasil dihapus!');
     }
 }

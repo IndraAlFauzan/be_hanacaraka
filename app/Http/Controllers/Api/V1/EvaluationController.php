@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Evaluation;
+use App\Http\Requests\Api\V1\StoreEvaluationRequest;
+use App\Http\Resources\V1\EvaluationResource;
 use App\Models\ChallengeResult;
+use App\Models\Evaluation;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EvaluationController extends Controller
 {
-    public function show($stageId, Request $request)
+    /**
+     * Show evaluation for a stage with user attempt stats
+     */
+    public function show(int $stageId, Request $request): JsonResponse
     {
         $evaluation = Evaluation::where('stage_id', $stageId)->firstOrFail();
         $user = $request->user();
@@ -28,27 +34,24 @@ class EvaluationController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'id' => $evaluation->id,
-                'stage_id' => $evaluation->stage_id,
-                'character_target' => $evaluation->character_target,
-                'reference_image_url' => $evaluation->reference_image_url,
-                'min_similarity_score' => $evaluation->min_similarity_score,
+                'evaluation' => new EvaluationResource($evaluation),
                 'user_attempts' => $userAttempts,
                 'user_best_score' => $userBestScore,
             ],
         ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Store new evaluation (Admin only)
+     */
+    public function store(StoreEvaluationRequest $request): JsonResponse
     {
-        $request->validate([
-            'stage_id' => 'required|exists:stages,id',
-            'character_target' => 'required|string|max:10',
-            'reference_image_url' => 'required|url',
-            'min_similarity_score' => 'numeric|min:0|max:100',
-        ]);
+        $evaluation = Evaluation::create($request->validated());
 
-        $evaluation = Evaluation::create($request->all());
-        return response()->json(['success' => true, 'data' => $evaluation], 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Evaluation created successfully',
+            'data' => new EvaluationResource($evaluation),
+        ], 201);
     }
 }

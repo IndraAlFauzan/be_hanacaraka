@@ -4,18 +4,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\LeaderboardService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class LeaderboardController extends Controller
 {
-    protected $leaderboardService;
+    public function __construct(
+        protected LeaderboardService $leaderboardService
+    ) {}
 
-    public function __construct(LeaderboardService $leaderboardService)
-    {
-        $this->leaderboardService = $leaderboardService;
-    }
-
-    public function weekly(Request $request)
+    /**
+     * Get weekly leaderboard
+     */
+    public function weekly(Request $request): JsonResponse
     {
         $weekStartDate = $request->query('week_start_date');
         $leaderboard = $this->leaderboardService->getWeeklyLeaderboard($weekStartDate);
@@ -38,9 +39,12 @@ class LeaderboardController extends Controller
         ]);
     }
 
-    public function allTime(Request $request)
+    /**
+     * Get all-time leaderboard
+     */
+    public function allTime(Request $request): JsonResponse
     {
-        $limit = $request->query('limit', 10);
+        $limit = (int) $request->query('limit', 10);
         $leaderboard = $this->leaderboardService->getAllTimeLeaderboard($limit);
 
         return response()->json([

@@ -3,197 +3,109 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\V1\MaterialResource;
 use App\Models\Material;
+use App\Services\MaterialService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class MaterialController extends Controller
 {
-    public function index($stageId)
+    protected MaterialService $materialService;
+
+    public function __construct(MaterialService $materialService)
+    {
+        $this->materialService = $materialService;
+    }
+
+    /**
+     * Get all materials for a stage
+     */
+    public function index($stageId): JsonResponse
     {
         $materials = Material::where('stage_id', $stageId)
             ->orderBy('order_index')
             ->get();
 
-        return response()->json(['success' => true, 'data' => $materials]);
+        return response()->json([
+            'success' => true,
+            'data' => MaterialResource::collection($materials),
+        ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Store a new material (Admin only)
+     */
+    public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'stage_id' => 'required|exists:stages,id',
-            'content_markdown' => 'required|string',
+            'title' => 'required|string|max:255',
+            'content_text' => 'nullable|string',
+            'content_markdown' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'order_index' => 'integer',
+            'order_index' => 'integer|min:1',
         ]);
 
-        $data = $request->only(['stage_id', 'content_markdown', 'order_index']);
+        $material = $this->materialService->createMaterial($validated, $request);
 
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $data['image_url'] = $this->uploadImage($request->file('image'));
-        }
-
-        $material = Material::create($data);
-        return response()->json(['success' => true, 'data' => $material], 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Material created successfully',
+            'data' => new MaterialResource($material),
+        ], 201);
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Get a specific material
+     */
+    public function show($id): JsonResponse
+    {
+        $material = Material::with('stage')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => new MaterialResource($material),
+        ]);
+    }
+
+    /**
+     * Update a material (Admin only)
+     */
+    public function update(Request $request, $id): JsonResponse
     {
         $material = Material::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
+            'stage_id' => 'sometimes|exists:stages,id',
+            'title' => 'sometimes|string|max:255',
+            'content_text' => 'nullable|string',
+            'content_markdown' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'order_index' => 'sometimes|integer|min:1',
         ]);
 
-        $data = $request->only(['stage_id', 'content_markdown', 'order_index']);
+        $material = $this->materialService->updateMaterial($material, $validated, $request);
 
-        // Handle new image upload
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($material->image_url) {
-                $this->deleteImage($material->image_url);
-            }
-            $data['image_url'] = $this->uploadImage($request->file('image'));
-        }
-
-        $material->update($data);
-        return response()->json(['success' => true, 'data' => $material]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Material updated successfully',
+            'data' => new MaterialResource($material),
+        ]);
     }
 
-    public function destroy($id)
+    /**
+     * Delete a material (Admin only)
+     */
+    public function destroy($id): JsonResponse
     {
         $material = Material::findOrFail($id);
 
-        // Delete image if exists
-        if ($material->image_url) {
-            $this->deleteImage($material->image_url);
-        }
+        $this->materialService->deleteMaterial($material);
 
-        $material->delete();
-        return response()->json(['success' => true, 'message' => 'Material deleted']);
-    }
-
-    /**
-     * Upload and resize image
-     */
-    private function uploadImage($file)
-    {
-        try {
-            $timestamp = time();
-            $uuid = Str::uuid();
-            $extension = $file->getClientOriginalExtension();
-            $filename = "material_{$timestamp}_{$uuid}.{$extension}";
-
-            // Ensure directory exists
-            $directory = storage_path('app/public/materials');
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            // Full destination path
-            $destinationPath = $directory . '/' . $filename;
-
-            // Use native PHP move_uploaded_file as Laravel Storage is failing
-            $tmpPath = $file->getPathname();
-
-            // Try move_uploaded_file first
-            $moved = move_uploaded_file($tmpPath, $destinationPath);
-
-            if (!$moved) {
-                // If move_uploaded_file fails, try copy
-                $moved = copy($tmpPath, $destinationPath);
-            }
-
-            if (!$moved) {
-                throw new \Exception('Failed to move uploaded file to: ' . $destinationPath);
-            }
-
-            // Verify file exists and has content
-            if (!file_exists($destinationPath)) {
-                throw new \Exception('File does not exist after move: ' . $destinationPath);
-            }
-
-            $fileSize = filesize($destinationPath);
-            if ($fileSize === 0) {
-                throw new \Exception('File is empty after move: ' . $destinationPath);
-            }
-
-            // Return full URL
-            return url('storage/materials/' . $filename);
-        } catch (\Exception $e) {
-            \Log::error('Image upload failed: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
-     * Delete image from storage
-     */
-    private function deleteImage($imageUrl)
-    {
-        // Extract filename from URL
-        $path = parse_url($imageUrl, PHP_URL_PATH);
-        $filename = basename($path);
-
-        $storagePath = "public/materials/{$filename}";
-
-        if (Storage::exists($storagePath)) {
-            Storage::delete($storagePath);
-        }
-    }
-
-    /**
-     * Resize and compress image using GD library
-     */
-    private function resizeAndCompress($file)
-    {
-        $sourceImage = null;
-        $mime = $file->getMimeType();
-
-        if ($mime === 'image/jpeg' || $mime === 'image/jpg') {
-            $sourceImage = imagecreatefromjpeg($file->getPathname());
-        } elseif ($mime === 'image/png') {
-            $sourceImage = imagecreatefrompng($file->getPathname());
-        }
-
-        if (!$sourceImage) {
-            throw new \Exception('Failed to load image');
-        }
-
-        $origWidth = imagesx($sourceImage);
-        $origHeight = imagesy($sourceImage);
-
-        $maxWidth = 1920;
-        if ($origWidth > $maxWidth) {
-            $targetWidth = $maxWidth;
-            $targetHeight = (int)($origHeight * ($maxWidth / $origWidth));
-        } else {
-            $targetWidth = $origWidth;
-            $targetHeight = $origHeight;
-        }
-
-        $newImage = imagecreatetruecolor($targetWidth, $targetHeight);
-
-        if ($mime === 'image/png') {
-            imagealphablending($newImage, false);
-            imagesavealpha($newImage, true);
-        }
-
-        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $origWidth, $origHeight);
-
-        ob_start();
-        if ($mime === 'image/png') {
-            imagepng($newImage, null, 8);
-        } else {
-            imagejpeg($newImage, null, 85);
-        }
-        $imageData = ob_get_clean();
-
-        imagedestroy($sourceImage);
-        imagedestroy($newImage);
-
-        return $imageData;
+        return response()->json([
+            'success' => true,
+            'message' => 'Material deleted successfully',
+        ]);
     }
 }

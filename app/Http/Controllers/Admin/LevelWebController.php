@@ -3,73 +3,67 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreLevelRequest;
+use App\Http\Requests\Admin\UpdateLevelRequest;
 use App\Models\Level;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class LevelWebController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $levels = Level::withCount('stages')
             ->orderBy('level_number')
             ->paginate(20);
+
         return view('admin.levels.index', compact('levels'));
     }
 
-    public function create()
+    public function create(): View
     {
         return view('admin.levels.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreLevelRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'level_number' => 'required|integer|unique:levels',
-            'title' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'xp_required' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
+        Level::create($request->validated());
 
-        Level::create($validated);
-        return redirect()->route('admin.levels.index')
+        return redirect()
+            ->route('admin.levels.index')
             ->with('success', 'Level berhasil ditambahkan!');
     }
 
-    public function show(string $id)
+    public function show(string $id): View
     {
         $level = Level::with('stages')->findOrFail($id);
+
         return view('admin.levels.show', compact('level'));
     }
 
-    public function edit(string $id)
+    public function edit(string $id): View
     {
         $level = Level::with(['stages.materials', 'stages.quizzes'])->findOrFail($id);
+
         return view('admin.levels.edit', compact('level'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateLevelRequest $request, string $id): RedirectResponse
     {
         $level = Level::findOrFail($id);
+        $level->update($request->validated());
 
-        $validated = $request->validate([
-            'level_number' => 'required|integer|unique:levels,level_number,' . $id,
-            'title' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'xp_required' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        $level->update($validated);
-        return redirect()->route('admin.levels.index')
+        return redirect()
+            ->route('admin.levels.index')
             ->with('success', 'Level berhasil diupdate!');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
-        $level = Level::findOrFail($id);
-        $level->delete();
-        return redirect()->route('admin.levels.index')
+        Level::findOrFail($id)->delete();
+
+        return redirect()
+            ->route('admin.levels.index')
             ->with('success', 'Level berhasil dihapus!');
     }
 }

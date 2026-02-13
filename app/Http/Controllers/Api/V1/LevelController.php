@@ -3,20 +3,28 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\StoreLevelRequest;
+use App\Http\Resources\V1\LevelResource;
 use App\Models\Level;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class LevelController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * List levels with unlock status for current user
+     */
+    public function index(Request $request): JsonResponse
     {
         $query = Level::query();
+
         if ($request->has('is_active')) {
             $query->where('is_active', $request->is_active);
         }
+
         $levels = $query->orderBy('level_number')->get();
         $user = $request->user();
+
         $levelsData = $levels->map(function ($level) use ($user) {
             return [
                 'id' => $level->id,
@@ -29,60 +37,65 @@ class LevelController extends Controller
                 'total_stages' => $level->stages()->count(),
             ];
         });
-        return response()->json(['success' => true, 'data' => $levelsData]);
-    }
 
-    public function show($id)
-    {
-        $level = Level::with('stages')->findOrFail($id);
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $level->id,
-                'level_number' => $level->level_number,
-                'title' => $level->title,
-                'description' => $level->description,
-                'xp_required' => $level->xp_required,
-                'is_active' => $level->is_active,
-                'stages' => $level->stages,
-            ],
+            'data' => $levelsData,
         ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Show level detail with stages
+     */
+    public function show(int $id): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'level_number' => 'required|integer|unique:levels,level_number',
-            'title' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'xp_required' => 'required|integer|min:0',
-            'is_active' => 'boolean',
+        $level = Level::with('stages')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => new LevelResource($level),
         ]);
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-        }
-        $level = Level::create($request->all());
-        return response()->json(['success' => true, 'message' => 'Level created', 'data' => $level], 201);
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Store new level (Admin only)
+     */
+    public function store(StoreLevelRequest $request): JsonResponse
+    {
+        $level = Level::create($request->validated());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Level created successfully',
+            'data' => new LevelResource($level),
+        ], 201);
+    }
+
+    /**
+     * Update level (Admin only)
+     */
+    public function update(Request $request, int $id): JsonResponse
     {
         $level = Level::findOrFail($id);
-        $validator = Validator::make($request->all(), [
-            'level_number' => 'integer|unique:levels,level_number,' . $id,
-            'title' => 'string|max:100',
-            'xp_required' => 'integer|min:0',
-        ]);
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-        }
         $level->update($request->all());
-        return response()->json(['success' => true, 'data' => $level]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Level updated successfully',
+            'data' => new LevelResource($level),
+        ]);
     }
 
-    public function destroy($id)
+    /**
+     * Delete level (Admin only)
+     */
+    public function destroy(int $id): JsonResponse
     {
         Level::findOrFail($id)->delete();
-        return response()->json(['success' => true, 'message' => 'Level deleted']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Level deleted successfully',
+        ]);
     }
 }
