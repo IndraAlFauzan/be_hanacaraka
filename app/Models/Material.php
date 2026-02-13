@@ -12,6 +12,8 @@ class Material extends Model
 
     protected $fillable = [
         'stage_id',
+        'title',
+        'content_text',
         'content_markdown',
         'image_url',
         'order_index',

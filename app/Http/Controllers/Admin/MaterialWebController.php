@@ -1,53 +1,84 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Material;
+use App\Models\Stage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-class MaterialController extends Controller
+class MaterialWebController extends Controller
 {
-    public function index($stageId)
+    public function index(Request $request)
     {
-        $materials = Material::where('stage_id', $stageId)
-            ->orderBy('order_index')
-            ->get();
+        $query = Material::with(['stage.level']);
 
-        return response()->json(['success' => true, 'data' => $materials]);
+        if ($request->filled('stage_id')) {
+            $query->where('stage_id', $request->stage_id);
+        }
+
+        $materials = $query->orderBy('stage_id')->orderBy('order_index')->paginate(20);
+        $stages = Stage::with('level')->orderBy('level_id')->orderBy('stage_number')->get();
+
+        return view('admin.materials.index', compact('materials', 'stages'));
+    }
+
+    public function create()
+    {
+        $stages = Stage::with('level')->orderBy('level_id')->orderBy('stage_number')->get();
+        return view('admin.materials.create', compact('stages'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'stage_id' => 'required|exists:stages,id',
-            'content_markdown' => 'required|string',
+            'title' => 'required|string|max:255',
+            'content_text' => 'nullable|string',
+            'content_markdown' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'order_index' => 'integer',
+            'order_index' => 'required|integer|min:1',
         ]);
-
-        $data = $request->only(['stage_id', 'content_markdown', 'order_index']);
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            $data['image_url'] = $this->uploadImage($request->file('image'));
+            \Log::info('File upload detected', [
+                'hasFile' => $request->hasFile('image'),
+                'isValid' => $request->file('image')->isValid(),
+                'originalName' => $request->file('image')->getClientOriginalName(),
+                'size' => $request->file('image')->getSize(),
+                'mimeType' => $request->file('image')->getMimeType(),
+                'tmpPath' => $request->file('image')->getPathname()
+            ]);
+            $validated['image_url'] = $this->uploadImage($request->file('image'));
         }
 
-        $material = Material::create($data);
-        return response()->json(['success' => true, 'data' => $material], 201);
+        Material::create($validated);
+        return redirect()->route('admin.materials.index')
+            ->with('success', 'Materi berhasil ditambahkan!');
     }
 
-    public function update(Request $request, $id)
+    public function edit(string $id)
+    {
+        $material = Material::with(['stage.level'])->findOrFail($id);
+        $stages = Stage::with('level')->orderBy('level_id')->orderBy('stage_number')->get();
+        return view('admin.materials.edit', compact('material', 'stages'));
+    }
+
+    public function update(Request $request, string $id)
     {
         $material = Material::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
+            'stage_id' => 'required|exists:stages,id',
+            'title' => 'required|string|max:255',
+            'content_text' => 'nullable|string',
+            'content_markdown' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'order_index' => 'required|integer|min:1',
         ]);
-
-        $data = $request->only(['stage_id', 'content_markdown', 'order_index']);
 
         // Handle new image upload
         if ($request->hasFile('image')) {
@@ -55,14 +86,15 @@ class MaterialController extends Controller
             if ($material->image_url) {
                 $this->deleteImage($material->image_url);
             }
-            $data['image_url'] = $this->uploadImage($request->file('image'));
+            $validated['image_url'] = $this->uploadImage($request->file('image'));
         }
 
-        $material->update($data);
-        return response()->json(['success' => true, 'data' => $material]);
+        $material->update($validated);
+        return redirect()->route('admin.materials.index')
+            ->with('success', 'Materi berhasil diperbarui!');
     }
 
-    public function destroy($id)
+    public function destroy(string $id)
     {
         $material = Material::findOrFail($id);
 
@@ -72,7 +104,9 @@ class MaterialController extends Controller
         }
 
         $material->delete();
-        return response()->json(['success' => true, 'message' => 'Material deleted']);
+
+        return redirect()->route('admin.materials.index')
+            ->with('success', 'Materi berhasil dihapus!');
     }
 
     /**
@@ -98,11 +132,21 @@ class MaterialController extends Controller
             // Use native PHP move_uploaded_file as Laravel Storage is failing
             $tmpPath = $file->getPathname();
 
+            \Log::info('Attempting file upload', [
+                'tmpPath' => $tmpPath,
+                'tmpExists' => file_exists($tmpPath),
+                'tmpSize' => file_exists($tmpPath) ? filesize($tmpPath) : 0,
+                'destinationPath' => $destinationPath,
+                'directoryExists' => file_exists($directory),
+                'directoryWritable' => is_writable($directory)
+            ]);
+
             // Try move_uploaded_file first
             $moved = move_uploaded_file($tmpPath, $destinationPath);
 
             if (!$moved) {
-                // If move_uploaded_file fails, try copy
+                // If move_uploaded_file fails (might happen in non-upload context), try copy
+                \Log::warning('move_uploaded_file failed, trying copy');
                 $moved = copy($tmpPath, $destinationPath);
             }
 
@@ -120,10 +164,19 @@ class MaterialController extends Controller
                 throw new \Exception('File is empty after move: ' . $destinationPath);
             }
 
-            // Return full URL
-            return url('storage/materials/' . $filename);
+            \Log::info('File uploaded successfully', [
+                'destination' => $destinationPath,
+                'size' => $fileSize
+            ]);
+
+            // Return full URL using asset helper
+            return asset('storage/materials/' . $filename);
         } catch (\Exception $e) {
-            \Log::error('Image upload failed: ' . $e->getMessage());
+            \Log::error('Image upload failed: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
             throw $e;
         }
     }
@@ -133,7 +186,7 @@ class MaterialController extends Controller
      */
     private function deleteImage($imageUrl)
     {
-        // Extract filename from URL
+        // Extract filename from URL (handle both full URL and relative path)
         $path = parse_url($imageUrl, PHP_URL_PATH);
         $filename = basename($path);
 
@@ -162,9 +215,11 @@ class MaterialController extends Controller
             throw new \Exception('Failed to load image');
         }
 
+        // Get original dimensions
         $origWidth = imagesx($sourceImage);
         $origHeight = imagesy($sourceImage);
 
+        // Max width for material images
         $maxWidth = 1920;
         if ($origWidth > $maxWidth) {
             $targetWidth = $maxWidth;
@@ -174,15 +229,30 @@ class MaterialController extends Controller
             $targetHeight = $origHeight;
         }
 
+        // Create new image
         $newImage = imagecreatetruecolor($targetWidth, $targetHeight);
 
+        // Preserve transparency for PNG
         if ($mime === 'image/png') {
             imagealphablending($newImage, false);
             imagesavealpha($newImage, true);
         }
 
-        imagecopyresampled($newImage, $sourceImage, 0, 0, 0, 0, $targetWidth, $targetHeight, $origWidth, $origHeight);
+        // Resize
+        imagecopyresampled(
+            $newImage,
+            $sourceImage,
+            0,
+            0,
+            0,
+            0,
+            $targetWidth,
+            $targetHeight,
+            $origWidth,
+            $origHeight
+        );
 
+        // Output to buffer
         ob_start();
         if ($mime === 'image/png') {
             imagepng($newImage, null, 8);
@@ -191,6 +261,7 @@ class MaterialController extends Controller
         }
         $imageData = ob_get_clean();
 
+        // Clean up
         imagedestroy($sourceImage);
         imagedestroy($newImage);
 

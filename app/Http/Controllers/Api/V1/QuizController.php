@@ -32,9 +32,13 @@ class QuizController extends Controller
                 'question_text' => $q->question_text,
                 'question_image_url' => $q->question_image_url,
                 'option_a' => $q->option_a,
+                'option_a_image_url' => $q->option_a_image_url,
                 'option_b' => $q->option_b,
+                'option_b_image_url' => $q->option_b_image_url,
                 'option_c' => $q->option_c,
+                'option_c_image_url' => $q->option_c_image_url,
                 'option_d' => $q->option_d,
+                'option_d_image_url' => $q->option_d_image_url,
             ];
         });
 

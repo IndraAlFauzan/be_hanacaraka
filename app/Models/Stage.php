@@ -44,19 +44,19 @@ class Stage extends Model
     }
 
     /**
-     * Get the evaluation for the stage.
+     * Get the quizzes for the stage.
      */
-    public function evaluation(): HasOne
+    public function quizzes(): HasMany
     {
-        return $this->hasOne(Evaluation::class);
+        return $this->hasMany(Quiz::class);
     }
 
     /**
-     * Get the quiz for the stage.
+     * Get the evaluations for the stage.
      */
-    public function quiz(): HasOne
+    public function evaluations(): HasMany
     {
-        return $this->hasOne(Quiz::class);
+        return $this->hasMany(Evaluation::class);
     }
 
     /**

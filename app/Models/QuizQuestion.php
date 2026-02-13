@@ -15,9 +15,13 @@ class QuizQuestion extends Model
         'question_text',
         'question_image_url',
         'option_a',
+        'option_a_image_url',
         'option_b',
+        'option_b_image_url',
         'option_c',
+        'option_c_image_url',
         'option_d',
+        'option_d_image_url',
         'correct_answer',
         'order_index',
     ];

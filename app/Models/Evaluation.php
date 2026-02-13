@@ -38,4 +38,12 @@ class Evaluation extends Model
     {
         return $this->hasMany(ChallengeResult::class);
     }
+
+    /**
+     * Get the challenge results for this evaluation (alias).
+     */
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(ChallengeResult::class);
+    }
 }

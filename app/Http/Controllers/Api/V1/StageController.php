@@ -19,7 +19,7 @@ class StageController extends Controller
 
     public function index(Request $request)
     {
-        $query = Stage::with(['level', 'materials', 'evaluation', 'quiz']);
+        $query = Stage::with(['level', 'materials', 'evaluations', 'quizzes']);
         if ($request->has('level_id')) {
             $query->where('level_id', $request->level_id);
         }
@@ -46,8 +46,8 @@ class StageController extends Controller
                 'is_unlocked' => $isUnlocked,
                 'status' => $status,
                 'has_material' => $stage->materials()->exists(),
-                'has_evaluation' => $stage->evaluation !== null,
-                'has_quiz' => $stage->quiz !== null,
+                'has_evaluation' => $stage->evaluations()->exists(),
+                'has_quiz' => $stage->quizzes()->exists(),
             ];
         });
         return response()->json(['success' => true, 'data' => $stagesData]);
@@ -55,7 +55,7 @@ class StageController extends Controller
 
     public function show($id)
     {
-        $stage = Stage::with(['level', 'materials', 'evaluation', 'quiz.questions'])->findOrFail($id);
+        $stage = Stage::with(['level', 'materials', 'evaluations', 'quizzes.questions'])->findOrFail($id);
         return response()->json(['success' => true, 'data' => $stage]);
     }
 
