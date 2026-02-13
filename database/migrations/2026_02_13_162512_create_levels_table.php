@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('xp_required'); // XP kumulatif untuk unlock level ini
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index('level_number', 'idx_level_number');
         });
     }

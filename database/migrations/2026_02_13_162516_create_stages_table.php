@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('xp_reward')->default(10);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->unique(['level_id', 'stage_number'], 'unique_level_stage');
             $table->index(['level_id', 'stage_number'], 'idx_level_stage');
         });

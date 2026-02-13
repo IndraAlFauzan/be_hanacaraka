@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            
+
             $table->index('role', 'idx_role');
             $table->index('email', 'idx_email');
             $table->index('total_xp', 'idx_total_xp');

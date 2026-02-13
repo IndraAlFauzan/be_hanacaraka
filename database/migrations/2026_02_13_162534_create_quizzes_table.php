@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('title', 100)->nullable();
             $table->integer('passing_score')->default(60);
             $table->timestamps();
-            
+
             $table->index('stage_id', 'idx_stage');
         });
     }

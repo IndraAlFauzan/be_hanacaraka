@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('image_url')->nullable();
             $table->integer('order_index')->default(0);
             $table->timestamps();
-            
+
             $table->index(['stage_id', 'order_index'], 'idx_stage_order');
         });
     }

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->boolean('is_passed');
             $table->integer('attempt_number')->default(1);
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->index(['user_id', 'evaluation_id'], 'idx_user_evaluation');
             $table->index('created_at', 'idx_created_at');
         });

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('reference_image_url');
             $table->decimal('min_similarity_score', 5, 2)->default(70.00);
             $table->timestamps();
-            
+
             $table->index('stage_id', 'idx_stage');
         });
     }

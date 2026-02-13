@@ -19,7 +19,7 @@ return new class extends Migration
             $table->enum('criteria_type', ['xp_milestone', 'streak', 'level_complete', 'custom']);
             $table->integer('criteria_value')->nullable();
             $table->timestamps();
-            
+
             $table->index('criteria_type', 'idx_criteria');
         });
     }

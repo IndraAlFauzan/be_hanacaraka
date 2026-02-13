@@ -20,7 +20,7 @@ return new class extends Migration
             $table->json('answers'); // Format: [{"question_id": 1, "selected_answer": "a", "is_correct": true}]
             $table->integer('attempt_number')->default(1);
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->index(['user_id', 'quiz_id'], 'idx_user_quiz');
             $table->index('created_at', 'idx_created_at');
         });

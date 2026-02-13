@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('total_xp')->default(0);
             $table->integer('rank')->nullable();
             $table->timestamps();
-            
+
             $table->unique(['user_id', 'week_start_date'], 'unique_user_week');
             $table->index(['week_start_date', 'total_xp'], 'idx_week_xp');
         });

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->enum('correct_answer', ['a', 'b', 'c', 'd']);
             $table->integer('order_index')->default(0);
             $table->timestamps();
-            
+
             $table->index(['quiz_id', 'order_index'], 'idx_quiz_order');
         });
     }
