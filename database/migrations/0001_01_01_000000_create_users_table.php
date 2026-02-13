@@ -13,12 +13,23 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('name', 100);
+            $table->string('email', 100)->unique();
             $table->string('password');
+            $table->enum('role', ['admin', 'pemain'])->default('pemain');
+            $table->integer('total_xp')->default(0);
+            $table->integer('current_level')->default(1);
+            $table->integer('streak_count')->default(0);
+            $table->date('last_activity_date')->nullable();
+            $table->integer('daily_goal_xp')->default(50);
+            $table->string('avatar_url')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            
+            $table->index('role', 'idx_role');
+            $table->index('email', 'idx_email');
+            $table->index('total_xp', 'idx_total_xp');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
