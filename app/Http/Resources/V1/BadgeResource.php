@@ -19,12 +19,9 @@ class BadgeResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'icon_url' => $this->icon_url,
-            'requirement_type' => $this->requirement_type,
-            'requirement_value' => $this->requirement_value,
-            'earned_at' => $this->whenPivotLoaded('user_badges', function () {
-                return $this->pivot->earned_at;
-            }),
-            'created_at' => $this->created_at?->toISOString(),
+            'requirement_type' => $this->criteria_type, // API alias for criteria_type
+            'requirement_value' => $this->criteria_value, // API alias for 
+
         ];
     }
 }

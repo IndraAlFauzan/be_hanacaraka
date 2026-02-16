@@ -128,15 +128,21 @@ class GamificationService
     {
         $weekStart = Carbon::now()->startOfWeek();
 
-        LeaderboardWeekly::updateOrCreate(
-            [
+        $entry = LeaderboardWeekly::where('user_id', $userId)
+            ->where('week_start_date', $weekStart->toDateString())
+            ->first();
+
+        if ($entry) {
+            // Update existing entry
+            $entry->increment('total_xp', $xpAmount);
+        } else {
+            // Create new entry
+            LeaderboardWeekly::create([
                 'user_id' => $userId,
                 'week_start_date' => $weekStart->toDateString(),
-            ],
-            [
-                'total_xp' => DB::raw("total_xp + $xpAmount"),
-            ]
-        );
+                'total_xp' => $xpAmount,
+            ]);
+        }
     }
 
     /**

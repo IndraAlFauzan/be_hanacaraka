@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ProgressService;
 use Illuminate\Http\Request;
 
 class UserWebController extends Controller
 {
+    public function __construct(
+        protected ProgressService $progressService
+    ) {}
+
     public function index(Request $request)
     {
         $query = User::query()->where('role', 'pemain');
@@ -54,13 +59,19 @@ class UserWebController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // Get detailed progress using ProgressService
+        $progressSummary = $this->progressService->getUserProgressSummary((int) $id);
+        $levelsProgress = $this->progressService->getDetailedLevelProgress((int) $id);
+
         // Hitung progress
-        $completedStages = $user->progress()->where('status', 'completed')->count();
+        $completedStages = $progressSummary['total_completed_stages'];
+        $totalStages = $progressSummary['total_stages'];
+        $completionPercentage = $progressSummary['completion_percentage'];
         $completedQuizzes = $user->quizResults()->where('is_passed', true)->count();
         $completedEvaluations = $user->challengeResults()->where('is_passed', true)->count();
 
-        // Badge yang diraih
-        $userBadges = $user->badges()->with('badge')->orderBy('earned_at', 'desc')->get();
+        // Badge yang diraih - badges() already returns Badge models with pivot
+        $userBadges = $user->badges()->orderByPivot('earned_at', 'desc')->get();
 
         // Aktivitas terakhir
         $recentProgress = $user->progress()
@@ -72,10 +83,14 @@ class UserWebController extends Controller
         return view('admin.users.show', compact(
             'user',
             'completedStages',
+            'totalStages',
+            'completionPercentage',
             'completedQuizzes',
             'completedEvaluations',
             'userBadges',
-            'recentProgress'
+            'recentProgress',
+            'levelsProgress',
+            'progressSummary'
         ));
     }
 

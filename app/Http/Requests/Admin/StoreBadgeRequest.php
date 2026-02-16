@@ -17,9 +17,8 @@ class StoreBadgeRequest extends FormRequest
             'name' => 'required|string|max:50',
             'description' => 'nullable|string',
             'icon_url' => 'required|string|max:100',
-            'criteria_type' => 'required|string|max:50',
+            'criteria_type' => 'required|in:xp_milestone,streak,level_complete,custom',
             'criteria_value' => 'nullable|integer|min:0',
-            'xp_reward' => 'required|integer|min:0',
         ];
     }
 
@@ -29,7 +28,7 @@ class StoreBadgeRequest extends FormRequest
             'name.required' => 'Nama badge wajib diisi',
             'icon_url.required' => 'URL ikon wajib diisi',
             'criteria_type.required' => 'Tipe kriteria wajib dipilih',
-            'xp_reward.required' => 'XP reward wajib diisi',
+            'criteria_type.in' => 'Tipe kriteria harus salah satu dari: xp_milestone, streak, level_complete, custom',
         ];
     }
 }

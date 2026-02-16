@@ -36,7 +36,7 @@ class LeaderboardService
                     'users.id as user_id',
                     'users.name',
                     'users.avatar_url',
-                    'leaderboard_weekly.total_xp',
+                    'leaderboard_weekly.total_xp as weekly_xp',
                     DB::raw('RANK() OVER (ORDER BY leaderboard_weekly.total_xp DESC) as `rank`')
                 )
                 ->orderBy('leaderboard_weekly.total_xp', 'desc')
@@ -69,7 +69,7 @@ class LeaderboardService
             ->where('leaderboard_weekly.week_start_date', $weekStartDate)
             ->where('leaderboard_weekly.user_id', $userId)
             ->select(
-                'leaderboard_weekly.total_xp',
+                'leaderboard_weekly.total_xp as weekly_xp',
                 DB::raw('(
                     SELECT COUNT(*) + 1 
                     FROM leaderboard_weekly as lw 
@@ -85,7 +85,7 @@ class LeaderboardService
 
         return [
             'rank' => $userEntry->rank,
-            'total_xp' => $userEntry->total_xp,
+            'weekly_xp' => $userEntry->weekly_xp,
         ];
     }
 

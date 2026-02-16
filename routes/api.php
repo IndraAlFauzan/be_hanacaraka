@@ -56,6 +56,8 @@ Route::prefix('v1')->group(function () {
 
         // User Progress - Self (no ID needed, uses token)
         Route::get('/progress', [ProgressController::class, 'myProgress']);
+        Route::get('/progress/levels', [ProgressController::class, 'levelsProgress']);
+        Route::get('/progress/levels/{levelId}', [ProgressController::class, 'levelProgress']);
 
         // User Badges - Self (no ID needed, uses token)
         Route::get('/my-badges', [BadgeController::class, 'myBadges']);
@@ -73,8 +75,8 @@ Route::prefix('v1')->group(function () {
 
         // Pemain only routes
         Route::middleware('check.role:pemain')->group(function () {
-            // Challenge submission
-            Route::post('/evaluations/{evaluationId}/submit-drawing', [ChallengeController::class, 'submitDrawing'])
+            // Challenge submission (Drawing)
+            Route::post('/stages/{stageId}/submit-drawing', [ChallengeController::class, 'submitDrawing'])
                 ->middleware('throttle:drawing-submission');
 
             // Quiz submission

@@ -50,6 +50,7 @@ class StageController extends Controller
                 'stage_number' => $stage->stage_number,
                 'title' => $stage->title,
                 'xp_reward' => $stage->xp_reward,
+                'evaluation_type' => $stage->evaluation_type,
                 'is_active' => $stage->is_active,
                 'is_unlocked' => $isUnlocked,
                 'status' => $status,

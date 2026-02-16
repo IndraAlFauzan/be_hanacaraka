@@ -10,7 +10,11 @@ class UserBadge extends Model
 {
     use HasFactory;
 
-    const UPDATED_AT = null;
+    /**
+     * Indicates if the model should be timestamped.
+     * Table only has earned_at, no created_at/updated_at
+     */
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',

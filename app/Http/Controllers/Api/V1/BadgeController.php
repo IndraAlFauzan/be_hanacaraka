@@ -14,11 +14,11 @@ class BadgeController extends Controller
     ) {}
 
     /**
-     * Get all active badges
+     * Get all badges
      */
     public function index(): JsonResponse
     {
-        $badges = $this->badgeService->getAllActiveBadges();
+        $badges = $this->badgeService->getAllBadges();
 
         return response()->json([
             'success' => true,

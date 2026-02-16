@@ -10,6 +10,11 @@ class LeaderboardWeekly extends Model
 {
     use HasFactory;
 
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'leaderboard_weekly';
+
     protected $fillable = [
         'user_id',
         'week_start_date',

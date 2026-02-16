@@ -26,7 +26,6 @@ class TranslationController extends Controller
             'data' => [
                 'input' => $input,
                 'output' => $output,
-                'output_format' => 'javanese_script',
             ],
         ]);
     }
@@ -44,7 +43,6 @@ class TranslationController extends Controller
             'data' => [
                 'input' => $input,
                 'output' => $output,
-                'output_format' => 'latin',
             ],
         ]);
     }

@@ -17,9 +17,11 @@ class StageResource extends JsonResource
         return [
             'id' => $this->id,
             'level_id' => $this->level_id,
-            'title' => $this->title,
-            'description' => $this->description,
             'stage_number' => $this->stage_number,
+            'title' => $this->title,
+            'xp_reward' => $this->xp_reward,
+            'evaluation_type' => $this->evaluation_type,
+            'is_active' => $this->is_active,
             'level' => new LevelResource($this->whenLoaded('level')),
             'materials' => MaterialResource::collection($this->whenLoaded('materials')),
             'quizzes' => QuizResource::collection($this->whenLoaded('quizzes')),

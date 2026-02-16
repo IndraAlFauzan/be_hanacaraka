@@ -7,93 +7,118 @@
 @section('content')
 <div class="card">
     <div class="card-header">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <span><i class="bi bi-book me-2"></i>Daftar Materi</span>
-            </div>
-            <div class="col-md-6 text-end">
-                <div class="btn-group">
-                    <select class="form-select form-select-sm" style="width: auto;" onchange="window.location.href = this.value;">
-                        <option value="{{ route('admin.materials.index') }}" {{ !request('stage_id') ? 'selected' : '' }}>Semua Stage</option>
-                        @foreach($stages as $stage)
-                            <option value="{{ route('admin.materials.index', ['stage_id' => $stage->id]) }}" 
-                                    {{ request('stage_id') == $stage->id ? 'selected' : '' }}>
-                                {{ $stage->title }} (Level {{ $stage->level->level_number }})
-                            </option>
-                        @endforeach
-                    </select>
-                    <a href="{{ route('admin.materials.create') }}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Tambah Materi
-                    </a>
-                </div>
-            </div>
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-journal-richtext"></i>
+            <span>Daftar Materi</span>
+            <span class="badge badge-soft-primary ms-2">{{ $materials->total() ?? $materials->count() }} total</span>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" style="width: 220px;" onchange="window.location.href = this.value;">
+                <option value="{{ route('admin.materials.index') }}" {{ !request('stage_id') ? 'selected' : '' }}>📁 Semua Stage</option>
+                @foreach($stages as $stage)
+                    <option value="{{ route('admin.materials.index', ['stage_id' => $stage->id]) }}" 
+                            {{ request('stage_id') == $stage->id ? 'selected' : '' }}>
+                        {{ Str::limit($stage->title, 25) }} (L{{ $stage->level->level_number }})
+                    </option>
+                @endforeach
+            </select>
+            <a href="{{ route('admin.materials.create') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i>
+                <span>Tambah Materi</span>
+            </a>
         </div>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Order</th>
-                        <th>Judul</th>
+                        <th style="width: 60px;">Urutan</th>
+                        <th style="width: 70px;">Preview</th>
+                        <th>Judul Materi</th>
                         <th>Stage</th>
-                        <th>Tipe</th>
-                        <th>Gambar</th>
-                        <th>Aksi</th>
+                        <th style="width: 120px;">Tipe Konten</th>
+                        <th style="width: 100px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($materials as $material)
                     <tr>
-                        <td><strong>{{ $material->order_index }}</strong></td>
                         <td>
-                            <strong>{{ $material->title }}</strong><br>
-                            <small class="text-muted">{{ Str::limit($material->content_text, 60) }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-info">
-                                {{ $material->stage->title }}
-                            </span>
-                        </td>
-                        <td>
-                            @if($material->content_markdown)
-                                <span class="badge bg-primary">Markdown</span>
-                            @endif
-                            @if($material->content_text)
-                                <span class="badge bg-secondary">Text</span>
-                            @endif
+                            <div class="avatar avatar-sm bg-secondary text-white">
+                                {{ $material->order_index }}
+                            </div>
                         </td>
                         <td>
                             @if($material->image_url)
-                                <img src="{{ $material->image_url }}" style="width: 50px; height: 50px; object-fit: cover;" class="rounded">
+                                <img src="{{ $material->image_url }}" 
+                                     class="rounded" 
+                                     style="width: 48px; height: 48px; object-fit: cover; border: 2px solid #f0f0f0;">
                             @else
-                                <span class="text-muted">-</span>
+                                <div class="avatar bg-light text-muted">
+                                    <i class="bi bi-image"></i>
+                                </div>
                             @endif
                         </td>
                         <td>
-                            <div class="btn-group btn-group-sm">
+                            <div class="fw-semibold text-dark">{{ $material->title }}</div>
+                            <small class="text-muted">{{ Str::limit($material->content_text, 50) }}</small>
+                        </td>
+                        <td>
+                            <span class="badge badge-soft-info">
+                                <i class="bi bi-collection me-1"></i>{{ $material->stage->title }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                @if($material->content_markdown)
+                                    <span class="badge badge-soft-primary">
+                                        <i class="bi bi-markdown me-1"></i>MD
+                                    </span>
+                                @endif
+                                @if($material->content_text)
+                                    <span class="badge badge-soft-secondary">
+                                        <i class="bi bi-text-paragraph me-1"></i>Text
+                                    </span>
+                                @endif
+                                @if($material->image_url)
+                                    <span class="badge badge-soft-success">
+                                        <i class="bi bi-image me-1"></i>Img
+                                    </span>
+                                @endif
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
                                 <a href="{{ route('admin.materials.edit', $material->id) }}" 
-                                   class="btn btn-outline-primary" 
+                                   class="btn btn-sm btn-icon btn-outline-primary" 
+                                   data-bs-toggle="tooltip" 
                                    title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <button type="button" 
-                                        class="btn btn-outline-danger" 
-                                        onclick="deleteMaterial({{ $material->id }})"
-                                        title="Hapus">
-                                    <i class="bi bi-trash"></i>
+                                        class="btn btn-sm btn-icon btn-outline-danger" 
+                                        data-bs-toggle="tooltip" 
+                                        title="Hapus"
+                                        onclick="confirmDelete('/admin/materials/{{ $material->id }}', 'Materi &quot;{{ $material->title }}&quot; akan dihapus permanen.')">
+                                    <i class="bi bi-trash3"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                            <p class="text-muted">Belum ada materi yang dibuat</p>
-                            <a href="{{ route('admin.materials.create') }}" class="btn btn-primary">
-                                <i class="bi bi-plus-circle me-2"></i>Tambah Materi Pertama
-                            </a>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="bi bi-journal-richtext"></i>
+                                </div>
+                                <h5>Belum ada materi</h5>
+                                <p>Tambahkan materi pembelajaran untuk stage.</p>
+                                <a href="{{ route('admin.materials.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg me-2"></i>Tambah Materi
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
@@ -102,25 +127,10 @@
         </div>
         
         @if($materials->hasPages())
-        <div class="mt-3">
+        <div class="card-footer bg-white border-top-0 d-flex justify-content-end">
             {{ $materials->appends(request()->query())->links() }}
         </div>
         @endif
     </div>
 </div>
-
-<form id="delete-form" method="POST" class="d-none">
-    @csrf
-    @method('DELETE')
-</form>
-
-<script>
-function deleteMaterial(id) {
-    if (confirm('Yakin ingin menghapus materi ini?')) {
-        const form = document.getElementById('delete-form');
-        form.action = '/admin/materials/' + id;
-        form.submit();
-    }
-}
-</script>
 @endsection

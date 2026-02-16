@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\SubmitQuizRequest;
 use App\Http\Resources\V1\QuizResource;
+use App\Models\ChallengeResult;
+use App\Models\Evaluation;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\QuizResult;
@@ -45,6 +47,7 @@ class QuizController extends Controller
     {
         $quiz = Quiz::with(['questions', 'stage'])->findOrFail($quizId);
         $user = $request->user();
+        $stage = $quiz->stage;
         $answers = $request->validated()['answers'];
 
         // Calculate score
@@ -72,19 +75,61 @@ class QuizController extends Controller
             'correct_answers' => $result['correct_count'],
             'total_questions' => $result['total_questions'],
             'xp_earned' => 0,
+            'stage_completed' => false,
         ];
 
-        // Award XP and update progress if passed
         if ($result['is_passed']) {
-            $this->gamificationService->addXP($user->id, $quiz->stage->xp_reward);
-            $response['xp_earned'] = $quiz->stage->xp_reward;
-            $this->progressService->completeStage($user->id, $quiz->stage_id);
+            if ($stage->evaluation_type === 'quiz') {
+                // Quiz is the ONLY evaluation - complete stage and award full XP
+                $this->progressService->completeStage($user->id, $stage->id);
+                $this->gamificationService->addXP($user->id, $stage->xp_reward);
+                $response['xp_earned'] = $stage->xp_reward;
+                $response['stage_completed'] = true;
+            } elseif ($stage->evaluation_type === 'both') {
+                // Stage requires BOTH drawing and quiz
+                // Check if drawing was already passed
+                $drawingPassed = $this->hasPassedDrawing($user->id, $stage->id);
+
+                // Award remaining 50% XP for quiz completion
+                $quizXp = (int) round($stage->xp_reward * 0.5);
+                $this->gamificationService->addXP($user->id, $quizXp);
+                $response['xp_earned'] = $quizXp;
+
+                if ($drawingPassed) {
+                    // Both evaluations passed - complete stage
+                    $this->progressService->completeStage($user->id, $stage->id);
+                    $response['stage_completed'] = true;
+                }
+            } else {
+                // evaluation_type === 'drawing'
+                // Quiz is for BONUS XP only (drawing is main evaluation)
+                $bonusXp = $this->calculateBonusXp($result['score'], $stage->xp_reward);
+                $this->gamificationService->addXP($user->id, $bonusXp);
+                $response['xp_earned'] = $bonusXp;
+            }
         }
 
         return response()->json([
             'success' => true,
             'data' => $response,
         ]);
+    }
+
+    /**
+     * Check if user has passed drawing evaluation for this stage
+     */
+    private function hasPassedDrawing(int $userId, int $stageId): bool
+    {
+        $evaluation = Evaluation::where('stage_id', $stageId)->first();
+
+        if (!$evaluation) {
+            return false;
+        }
+
+        return ChallengeResult::where('user_id', $userId)
+            ->where('evaluation_id', $evaluation->id)
+            ->where('is_passed', true)
+            ->exists();
     }
 
     /**
@@ -243,6 +288,20 @@ class QuizController extends Controller
                 'message' => 'Failed to delete quiz: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Calculate bonus XP based on quiz score
+     * Higher score = more bonus XP (50-100% of stage xp_reward)
+     */
+    private function calculateBonusXp(float $score, int $stageXpReward): int
+    {
+        // Base bonus is 50% of stage XP reward
+        // Additional bonus based on score (0-50% more)
+        $baseMultiplier = 0.5;
+        $scoreMultiplier = ($score / 100) * 0.5;
+
+        return (int) round($stageXpReward * ($baseMultiplier + $scoreMultiplier));
     }
 
     /**

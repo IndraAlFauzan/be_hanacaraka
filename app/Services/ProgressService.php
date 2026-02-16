@@ -189,11 +189,142 @@ class ProgressService
             'user_id' => $userId,
             'total_xp' => $user->total_xp,
             'current_level' => $user->current_level,
-            'completed_stages' => $completedStages,
+            'total_completed_stages' => $completedStages,
             'total_stages' => $totalStages,
-            'progress_percentage' => round($progressPercentage, 2),
-            'streak_count' => $user->streak_count,
+            'completion_percentage' => round($progressPercentage, 1),
+            'current_streak' => $user->streak_count,
             'last_activity_date' => $user->last_activity_date,
+        ];
+    }
+
+    /**
+     * Get detailed progress per level with stages.
+     *
+     * @param int $userId
+     * @return array
+     */
+    public function getDetailedLevelProgress(int $userId): array
+    {
+        $user = User::findOrFail($userId);
+        $levels = Level::with(['stages' => function ($query) {
+            $query->where('is_active', true)->orderBy('stage_number');
+        }])->where('is_active', true)->orderBy('level_number')->get();
+
+        $userProgress = UserProgress::where('user_id', $userId)
+            ->get()
+            ->keyBy('stage_id');
+
+        $levelsProgress = [];
+
+        foreach ($levels as $level) {
+            $totalStages = $level->stages->count();
+            $completedStages = 0;
+            $stagesDetail = [];
+
+            foreach ($level->stages as $stage) {
+                $progress = $userProgress->get($stage->id);
+                $status = $progress ? $progress->status : 'locked';
+
+                // Stage pertama di level pertama selalu unlocked
+                if ($level->level_number === 1 && $stage->stage_number === 1 && !$progress) {
+                    $status = 'unlocked';
+                }
+
+                if ($status === 'completed') {
+                    $completedStages++;
+                }
+
+                $stagesDetail[] = [
+                    'stage_id' => $stage->id,
+                    'stage_number' => $stage->stage_number,
+                    'title' => $stage->title,
+                    'xp_reward' => $stage->xp_reward,
+                    'evaluation_type' => $stage->evaluation_type,
+                    'status' => $status,
+                    'completed_at' => $progress?->completed_at,
+                ];
+            }
+
+            $levelPercentage = $totalStages > 0 ? ($completedStages / $totalStages) * 100 : 0;
+            $isUnlocked = $user->total_xp >= $level->xp_required;
+
+            $levelsProgress[] = [
+                'level_id' => $level->id,
+                'level_number' => $level->level_number,
+                'title' => $level->title,
+                'xp_required' => $level->xp_required,
+                'is_unlocked' => $isUnlocked,
+                'total_stages' => $totalStages,
+                'completed_stages' => $completedStages,
+                'completion_percentage' => round($levelPercentage, 1),
+                'stages' => $stagesDetail,
+            ];
+        }
+
+        return $levelsProgress;
+    }
+
+    /**
+     * Get progress for a specific level.
+     *
+     * @param int $userId
+     * @param int $levelId
+     * @return array|null
+     */
+    public function getLevelProgress(int $userId, int $levelId): ?array
+    {
+        $user = User::findOrFail($userId);
+        $level = Level::with(['stages' => function ($query) {
+            $query->where('is_active', true)->orderBy('stage_number');
+        }])->findOrFail($levelId);
+
+        $userProgress = UserProgress::where('user_id', $userId)
+            ->whereIn('stage_id', $level->stages->pluck('id'))
+            ->get()
+            ->keyBy('stage_id');
+
+        $totalStages = $level->stages->count();
+        $completedStages = 0;
+        $stagesDetail = [];
+
+        foreach ($level->stages as $stage) {
+            $progress = $userProgress->get($stage->id);
+            $status = $progress ? $progress->status : 'locked';
+
+            // Stage pertama di level pertama selalu unlocked
+            if ($level->level_number === 1 && $stage->stage_number === 1 && !$progress) {
+                $status = 'unlocked';
+            }
+
+            if ($status === 'completed') {
+                $completedStages++;
+            }
+
+            $stagesDetail[] = [
+                'stage_id' => $stage->id,
+                'stage_number' => $stage->stage_number,
+                'title' => $stage->title,
+                'xp_reward' => $stage->xp_reward,
+                'evaluation_type' => $stage->evaluation_type,
+                'status' => $status,
+                'completed_at' => $progress?->completed_at,
+            ];
+        }
+
+        $levelPercentage = $totalStages > 0 ? ($completedStages / $totalStages) * 100 : 0;
+        $isUnlocked = $user->total_xp >= $level->xp_required;
+
+        return [
+            'level_id' => $level->id,
+            'level_number' => $level->level_number,
+            'title' => $level->title,
+            'description' => $level->description,
+            'xp_required' => $level->xp_required,
+            'is_unlocked' => $isUnlocked,
+            'total_stages' => $totalStages,
+            'completed_stages' => $completedStages,
+            'completion_percentage' => round($levelPercentage, 1),
+            'stages' => $stagesDetail,
         ];
     }
 }

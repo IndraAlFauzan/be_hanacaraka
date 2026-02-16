@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             LevelsSeeder::class,
             StagesSeeder::class,
+            MaterialsSeeder::class,
             BadgesSeeder::class,
         ]);
     }

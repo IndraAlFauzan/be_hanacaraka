@@ -16,6 +16,7 @@ class QuizResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'stage_id' => $this->stage_id,
             'title' => $this->title,
             'passing_score' => $this->passing_score,
             'questions' => QuizQuestionResource::collection($this->whenLoaded('questions')),

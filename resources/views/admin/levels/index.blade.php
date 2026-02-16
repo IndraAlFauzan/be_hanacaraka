@@ -6,68 +6,95 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-layers me-2"></i>Daftar Levels</span>
-        <a href="{{ route('admin.levels.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Tambah Level
+    <div class="card-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-stack"></i>
+            <span>Daftar Levels</span>
+            <span class="badge badge-soft-primary ms-2">{{ $levels->total() ?? $levels->count() }} total</span>
+        </div>
+        <a href="{{ route('admin.levels.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i>
+            <span>Tambah Level</span>
         </a>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Level #</th>
+                        <th style="width: 80px;">Level</th>
                         <th>Judul</th>
                         <th>Deskripsi</th>
-                        <th style="width: 120px;">XP Required</th>
-                        <th style="width: 120px;">Total Stages</th>
+                        <th style="width: 130px;">XP Required</th>
+                        <th style="width: 100px;">Stages</th>
                         <th style="width: 100px;">Status</th>
-                        <th style="width: 150px;">Aksi</th>
+                        <th style="width: 120px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($levels as $level)
                     <tr>
                         <td>
-                            <span class="badge bg-primary fs-6">{{ $level->level_number }}</span>
+                            <div class="avatar avatar-sm bg-primary text-white">
+                                {{ $level->level_number }}
+                            </div>
                         </td>
                         <td>
-                            <strong>{{ $level->title }}</strong>
+                            <div class="fw-semibold text-dark">{{ $level->title }}</div>
                         </td>
                         <td>
-                            <small class="text-muted">{{ Str::limit($level->description, 60) }}</small>
+                            <span class="text-muted" style="font-size: 0.85rem;">{{ Str::limit($level->description, 50) ?: '-' }}</span>
                         </td>
                         <td>
-                            <span class="badge bg-info">{{ number_format($level->xp_required) }} XP</span>
+                            <span class="badge badge-soft-info">
+                                <i class="bi bi-lightning-fill me-1"></i>{{ number_format($level->xp_required) }} XP
+                            </span>
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-secondary">{{ $level->stages_count ?? 0 }}</span>
+                            <span class="badge badge-soft-secondary">{{ $level->stages_count ?? 0 }} stages</span>
                         </td>
                         <td>
                             @if($level->is_active)
-                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Aktif</span>
+                                <span class="badge badge-soft-success">
+                                    <i class="bi bi-check-circle me-1"></i>Aktif
+                                </span>
                             @else
-                                <span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Nonaktif</span>
+                                <span class="badge badge-soft-secondary">
+                                    <i class="bi bi-pause-circle me-1"></i>Nonaktif
+                                </span>
                             @endif
                         </td>
                         <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{{ route('admin.levels.edit', $level->id) }}" class="btn btn-outline-primary" title="Edit">
+                            <div class="action-buttons">
+                                <a href="{{ route('admin.levels.edit', $level->id) }}" 
+                                   class="btn btn-sm btn-icon btn-outline-primary" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Edit Level">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <button type="button" class="btn btn-outline-danger" title="Hapus" 
-                                        onclick="deleteLevel({{ $level->id }}, '{{ $level->title }}')">
-                                    <i class="bi bi-trash"></i>
+                                <button type="button" 
+                                        class="btn btn-sm btn-icon btn-outline-danger" 
+                                        data-bs-toggle="tooltip" 
+                                        title="Hapus Level"
+                                        onclick="confirmDelete('/admin/levels/{{ $level->id }}', 'Level &quot;{{ $level->title }}&quot; dan semua stage terkait akan dihapus permanen.')">
+                                    <i class="bi bi-trash3"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5">
-                            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
-                            <p class="text-muted">Belum ada level. Silakan tambahkan level baru.</p>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="bi bi-stack"></i>
+                                </div>
+                                <h5>Belum ada level</h5>
+                                <p>Mulai dengan membuat level pertama untuk pembelajaran.</p>
+                                <a href="{{ route('admin.levels.create') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg me-2"></i>Tambah Level Pertama
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
@@ -76,28 +103,10 @@
         </div>
         
         @if($levels->hasPages())
-        <div class="mt-3">
+        <div class="card-footer bg-white border-top-0 d-flex justify-content-end">
             {{ $levels->links() }}
         </div>
         @endif
     </div>
 </div>
-
-<!-- Delete Form (Hidden) -->
-<form id="deleteForm" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
 @endsection
-
-@push('scripts')
-<script>
-function deleteLevel(id, title) {
-    if (confirm(`Apakah Anda yakin ingin menghapus level "${title}"?\n\nSemua stage dan konten terkait akan ikut terhapus!`)) {
-        const form = document.getElementById('deleteForm');
-        form.action = `/admin/levels/${id}`;
-        form.submit();
-    }
-}
-</script>
-@endpush

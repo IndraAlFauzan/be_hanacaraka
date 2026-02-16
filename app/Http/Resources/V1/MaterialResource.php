@@ -23,8 +23,8 @@ class MaterialResource extends JsonResource
             'image_url' => $this->image_url,
             'order_index' => $this->order_index,
             'stage' => new StageResource($this->whenLoaded('stage')),
-            'created_at' => $this->created_at?->toISOString(),
-            'updated_at' => $this->updated_at?->toISOString(),
+            // 'created_at' => $this->created_at?->toISOString(),
+            // 'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

@@ -19,6 +19,7 @@ class UpdateStageRequest extends FormRequest
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'xp_reward' => 'required|integer|min:0',
+            'evaluation_type' => 'required|in:drawing,quiz,both',
             'is_active' => 'boolean',
         ];
     }
@@ -31,6 +32,8 @@ class UpdateStageRequest extends FormRequest
             'stage_number.required' => 'Nomor stage wajib diisi',
             'title.required' => 'Judul wajib diisi',
             'xp_reward.required' => 'XP reward wajib diisi',
+            'evaluation_type.required' => 'Tipe evaluasi wajib dipilih',
+            'evaluation_type.in' => 'Tipe evaluasi tidak valid',
         ];
     }
 }

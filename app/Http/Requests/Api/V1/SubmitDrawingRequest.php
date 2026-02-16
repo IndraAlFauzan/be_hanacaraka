@@ -17,6 +17,7 @@ class SubmitDrawingRequest extends FormRequest
     {
         return [
             'drawing_image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+            'similarity_score' => 'required|numeric|between:0,100',
         ];
     }
 
@@ -27,6 +28,9 @@ class SubmitDrawingRequest extends FormRequest
             'drawing_image.image' => 'File harus berupa gambar',
             'drawing_image.mimes' => 'Format gambar harus PNG, JPG, atau JPEG',
             'drawing_image.max' => 'Ukuran gambar maksimal 2MB',
+            'similarity_score.required' => 'Similarity score wajib diisi',
+            'similarity_score.numeric' => 'Similarity score harus berupa angka',
+            'similarity_score.between' => 'Similarity score harus antara 0-100',
         ];
     }
 

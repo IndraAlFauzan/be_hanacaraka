@@ -8,18 +8,17 @@ use App\Models\User;
 class BadgeService
 {
     /**
-     * Get all active badges
+     * Get all badges
      */
-    public function getAllActiveBadges()
+    public function getAllBadges()
     {
-        return Badge::where('is_active', true)
-            ->orderBy('criteria_type')
+        return Badge::orderBy('criteria_type')
             ->orderBy('criteria_value')
             ->get();
     }
 
     /**
-     * Get user's earned badges
+     * Get user's earned badges with full details
      */
     public function getUserBadges(int $userId): array
     {
@@ -27,21 +26,22 @@ class BadgeService
             $query->orderBy('user_badges.earned_at', 'desc');
         }])->findOrFail($userId);
 
+        $totalAvailable = Badge::count();
+
         $earnedBadges = $user->badges->map(fn($badge) => [
             'id' => $badge->id,
             'name' => $badge->name,
             'description' => $badge->description,
             'icon_url' => $badge->icon_url,
-            'criteria_type' => $badge->criteria_type,
-            'criteria_value' => $badge->criteria_value,
+            'requirement_type' => $badge->criteria_type,
+            'requirement_value' => $badge->criteria_value,
             'earned_at' => $badge->pivot->earned_at,
         ]);
 
         return [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'total_badges' => $earnedBadges->count(),
-            'badges' => $earnedBadges,
+            'earned_badges' => $earnedBadges,
+            'total_earned' => $earnedBadges->count(),
+            'total_available' => $totalAvailable,
         ];
     }
 }

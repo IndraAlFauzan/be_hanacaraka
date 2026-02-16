@@ -17,9 +17,9 @@ class EvaluationResource extends JsonResource
         return [
             'id' => $this->id,
             'stage_id' => $this->stage_id,
-            'title' => $this->title,
-            'passing_score' => $this->passing_score,
-            'questions' => EvaluationQuestionResource::collection($this->whenLoaded('questions')),
+            'character_target' => $this->character_target,
+            'reference_image_url' => $this->reference_image_url,
+            'min_similarity_score' => $this->min_similarity_score,
             'stage' => new StageResource($this->whenLoaded('stage')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

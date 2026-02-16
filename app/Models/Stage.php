@@ -17,6 +17,7 @@ class Stage extends Model
         'stage_number',
         'title',
         'xp_reward',
+        'evaluation_type',
         'is_active',
     ];
 
@@ -24,8 +25,25 @@ class Stage extends Model
         'level_id' => 'integer',
         'stage_number' => 'integer',
         'xp_reward' => 'integer',
+        'evaluation_type' => 'string',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Check if drawing is required for stage completion.
+     */
+    public function requiresDrawing(): bool
+    {
+        return in_array($this->evaluation_type, ['drawing', 'both']);
+    }
+
+    /**
+     * Check if quiz is required for stage completion.
+     */
+    public function requiresQuiz(): bool
+    {
+        return in_array($this->evaluation_type, ['quiz', 'both']);
+    }
 
     /**
      * Get the level that owns the stage.

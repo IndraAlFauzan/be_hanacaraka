@@ -20,6 +20,7 @@ class LevelResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'xp_required' => $this->xp_required,
+            'is_active' => $this->is_active,
             'stages' => StageResource::collection($this->whenLoaded('stages')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
