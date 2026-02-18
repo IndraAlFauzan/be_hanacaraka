@@ -12,12 +12,22 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Global middleware (applied to all requests)
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        // Alias middleware for route-specific use
         $middleware->alias([
             'check.role' => \App\Http\Middleware\CheckRole::class,
+            'sanitize' => \App\Http\Middleware\SanitizeInput::class,
         ]);
 
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \App\Http\Middleware\SanitizeInput::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\SanitizeInput::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

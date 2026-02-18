@@ -152,17 +152,34 @@ class LeaderboardService
     {
         $weekStartDate = Carbon::now()->startOfWeek()->toDateString();
 
-        DB::table('leaderboard_weekly')
-            ->updateOrInsert(
-                [
-                    'user_id' => $userId,
-                    'week_start_date' => $weekStartDate,
-                ],
-                [
-                    'total_xp' => DB::raw("COALESCE(total_xp, 0) + {$xpEarned}"),
+        // Ensure $xpEarned is safely cast to integer
+        $safeXpEarned = (int) abs($xpEarned);
+
+        // First, try to get existing record
+        $existing = DB::table('leaderboard_weekly')
+            ->where('user_id', $userId)
+            ->where('week_start_date', $weekStartDate)
+            ->first();
+
+        if ($existing) {
+            // Update existing record with safe addition
+            DB::table('leaderboard_weekly')
+                ->where('user_id', $userId)
+                ->where('week_start_date', $weekStartDate)
+                ->update([
+                    'total_xp' => $existing->total_xp + $safeXpEarned,
                     'updated_at' => now(),
-                ]
-            );
+                ]);
+        } else {
+            // Insert new record
+            DB::table('leaderboard_weekly')->insert([
+                'user_id' => $userId,
+                'week_start_date' => $weekStartDate,
+                'total_xp' => $safeXpEarned,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         // Invalidate cache
         $this->invalidateCache($weekStartDate);
