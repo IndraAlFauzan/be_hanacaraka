@@ -23,8 +23,12 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-/docs
-.env.example
-.env.example
+# Docker
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.crt
+docker/nginx/ssl/*.key
+.env.docker.local
 
-/.env.example
+# Documentation (keep in version control by removing this)
+# /docs
+/docs
