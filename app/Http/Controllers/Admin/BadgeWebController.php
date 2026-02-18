@@ -6,11 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreBadgeRequest;
 use App\Http\Requests\Admin\UpdateBadgeRequest;
 use App\Models\Badge;
+use App\Services\FileUploadService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 
 class BadgeWebController extends Controller
 {
+    public function __construct(
+        private FileUploadService $fileUploadService
+    ) {}
+
     public function index(): View
     {
         $badges = Badge::withCount('users')
@@ -27,7 +33,21 @@ class BadgeWebController extends Controller
 
     public function store(StoreBadgeRequest $request): RedirectResponse
     {
-        Badge::create($request->validated());
+        $data = $request->validated();
+
+        // Upload icon image
+        if ($request->hasFile('icon')) {
+            $imageUrl = $this->fileUploadService->uploadImage(
+                $request->file('icon'),
+                'badges',
+                'badge_icon'
+            );
+            // Extract relative path from full URL
+            $data['icon_path'] = str_replace(asset('storage/'), '', $imageUrl);
+        }
+
+        unset($data['icon']);
+        Badge::create($data);
 
         return redirect()
             ->route('admin.badges.index')
@@ -44,7 +64,26 @@ class BadgeWebController extends Controller
     public function update(UpdateBadgeRequest $request, string $id): RedirectResponse
     {
         $badge = Badge::findOrFail($id);
-        $badge->update($request->validated());
+        $data = $request->validated();
+
+        // Upload new icon if provided
+        if ($request->hasFile('icon')) {
+            // Delete old icon
+            if ($badge->icon_path) {
+                Storage::disk('public')->delete($badge->icon_path);
+            }
+
+            $imageUrl = $this->fileUploadService->uploadImage(
+                $request->file('icon'),
+                'badges',
+                'badge_icon'
+            );
+            // Extract relative path from full URL
+            $data['icon_path'] = str_replace(asset('storage/'), '', $imageUrl);
+        }
+
+        unset($data['icon']);
+        $badge->update($data);
 
         return redirect()
             ->route('admin.badges.index')
@@ -53,7 +92,14 @@ class BadgeWebController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        Badge::findOrFail($id)->delete();
+        $badge = Badge::findOrFail($id);
+
+        // Delete icon file
+        if ($badge->icon_path) {
+            Storage::disk('public')->delete($badge->icon_path);
+        }
+
+        $badge->delete();
 
         return redirect()
             ->route('admin.badges.index')

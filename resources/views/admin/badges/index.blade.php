@@ -73,7 +73,13 @@
             @foreach($badges as $badge)
             <div class="col-lg-3 col-md-4 col-sm-6">
                 <div class="badge-card p-4">
-                    <div class="badge-icon">{{ $badge->icon_url }}</div>
+                    <div class="badge-icon">
+                        @if($badge->icon_path)
+                            <img src="{{ asset('storage/' . $badge->icon_path) }}" alt="{{ $badge->name }}" style="width: 60px; height: 60px; object-fit: contain;">
+                        @else
+                            <span style="font-size: 3rem;">📷</span>
+                        @endif
+                    </div>
                     <h5 class="text-center fw-bold mb-2">{{ $badge->name }}</h5>
                     <p class="text-center text-muted small mb-3">{{ Str::limit($badge->description, 60) }}</p>
                     

@@ -3,12 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserBadge extends Model
+class UserBadge extends Pivot
 {
     use HasFactory;
+
+    /**
+     * The table associated with the pivot model.
+     */
+    protected $table = 'user_badges';
 
     /**
      * Indicates if the model should be timestamped.

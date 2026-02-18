@@ -18,7 +18,7 @@ class BadgeResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'icon_url' => $this->icon_url,
+            'icon_url' => $this->icon_path ? asset('storage/' . $this->icon_path) : null,
             'requirement_type' => $this->criteria_type, // API alias for criteria_type
             'requirement_value' => $this->criteria_value, // API alias for 
 

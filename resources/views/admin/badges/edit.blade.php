@@ -152,51 +152,55 @@
                 </div>
             </div>
             <div class="card-body p-4">
-                <form action="{{ route('admin.badges.update', $badge->id) }}" method="POST">
+                <form action="{{ route('admin.badges.update', $badge->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
-                    <div class="row">
-                        <div class="col-md-8 mb-4">
-                            <label for="name" class="form-label">
-                                Nama Badge <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control @error('name') is-invalid @enderror" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ old('name', $badge->name) }}"
-                                   maxlength="50"
-                                   required>
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-4 mb-4">
-                            <label for="icon_url" class="form-label">
-                                Icon/Emoji <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control text-center @error('icon_url') is-invalid @enderror" 
-                                   id="icon_url" 
-                                   name="icon_url" 
-                                   value="{{ old('icon_url', $badge->icon_url) }}"
-                                   maxlength="100"
-                                   style="font-size: 1.5rem;"
-                                   required>
-                            @error('icon_url')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="mb-4">
+                        <label for="name" class="form-label">
+                            Nama Badge <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control @error('name') is-invalid @enderror" 
+                               id="name" 
+                               name="name" 
+                               value="{{ old('name', $badge->name) }}"
+                               maxlength="50"
+                               required>
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     
-                    <div class="mb-2">
-                        <label class="form-label small text-muted">Pilih Emoji</label>
-                        <div class="emoji-picker">
-                            @foreach(['🏆', '🥇', '🥈', '🥉', '⭐', '🌟', '💫', '✨', '🎖️', '🏅', '🎯', '🔥', '💎', '👑', '🎓', '📚', '✏️', '🎨'] as $emoji)
-                            <span onclick="document.getElementById('icon_url').value='{{ $emoji }}'">{{ $emoji }}</span>
-                            @endforeach
+                    <div class="mb-4">
+                        <label for="icon" class="form-label">
+                            Gambar Icon Badge <span class="text-muted">(Kosongkan jika tidak ingin mengubah)</span>
+                        </label>
+                        
+                        @if($badge->icon_path)
+                        <div class="mb-3">
+                            <label class="form-label small text-muted">Icon Saat Ini:</label>
+                            <div>
+                                <img src="{{ asset('storage/' . $badge->icon_path) }}" alt="{{ $badge->name }}" style="max-width: 100px; max-height: 100px; border-radius: 12px; border: 2px solid #e9ecef;">
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <input type="file" 
+                               class="form-control @error('icon') is-invalid @enderror" 
+                               id="icon" 
+                               name="icon"
+                               accept="image/*"
+                               onchange="previewIcon(this)">
+                        <div class="form-text">Format: JPG, PNG, GIF, SVG, WEBP. Maksimal 2MB</div>
+                        @error('icon')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div id="iconPreview" class="mt-3" style="display: none;">
+                            <label class="form-label small text-muted">Preview Icon Baru:</label>
+                            <div>
+                                <img id="iconPreviewImg" src="" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 12px; border: 2px solid #e9ecef;">
+                            </div>
                         </div>
                     </div>
                     
@@ -303,7 +307,7 @@
                             <div class="fw-semibold">{{ $user->name }}</div>
                             <small class="text-muted">{{ $user->email }}</small>
                         </div>
-                        <small class="text-muted">{{ $user->pivot->earned_at->format('d M Y') }}</small>
+                        <small class="text-muted">{{ $user->pivot->earned_at instanceof \Carbon\Carbon ? $user->pivot->earned_at->format('d M Y') : \Carbon\Carbon::parse($user->pivot->earned_at)->format('d M Y') }}</small>
                     </div>
                     @endforeach
                     @if($badge->users->count() > 10)
@@ -333,7 +337,13 @@
             </div>
             <div class="card-body">
                 <div class="preview-box">
-                    <div class="preview-icon">{{ $badge->icon_url }}</div>
+                    <div class="preview-icon">
+                        @if($badge->icon_path)
+                            <img src="{{ asset('storage/' . $badge->icon_path) }}" alt="{{ $badge->name }}" style="max-width: 80px; max-height: 80px; object-fit: contain;">
+                        @else
+                            <span style="font-size: 3rem;">📷</span>
+                        @endif
+                    </div>
                     <h5 class="fw-bold mb-1">{{ $badge->name }}</h5>
                     <p class="text-muted small mb-0">{{ $badge->description }}</p>
                 </div>
@@ -368,4 +378,19 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    function previewIcon(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('iconPreview').style.display = 'block';
+                document.getElementById('iconPreviewImg').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+@endpush
 @endsection

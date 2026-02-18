@@ -127,51 +127,43 @@
                 </div>
             </div>
             <div class="card-body p-4">
-                <form action="{{ route('admin.badges.store') }}" method="POST">
+                <form action="{{ route('admin.badges.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
-                    <div class="row">
-                        <div class="col-md-8 mb-4">
-                            <label for="name" class="form-label">
-                                Nama Badge <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control @error('name') is-invalid @enderror" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ old('name') }}"
-                                   maxlength="50"
-                                   placeholder="contoh: Master Aksara"
-                                   required>
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="col-md-4 mb-4">
-                            <label for="icon_url" class="form-label">
-                                Icon/Emoji <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control text-center @error('icon_url') is-invalid @enderror" 
-                                   id="icon_url" 
-                                   name="icon_url" 
-                                   value="{{ old('icon_url', '🏆') }}"
-                                   maxlength="100"
-                                   style="font-size: 1.5rem;"
-                                   required>
-                            @error('icon_url')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="mb-4">
+                        <label for="name" class="form-label">
+                            Nama Badge <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control @error('name') is-invalid @enderror" 
+                               id="name" 
+                               name="name" 
+                               value="{{ old('name') }}"
+                               maxlength="50"
+                               placeholder="contoh: Master Aksara"
+                               required>
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     
-                    <div class="mb-2">
-                        <label class="form-label small text-muted">Pilih Emoji</label>
-                        <div class="emoji-picker">
-                            @foreach(['🏆', '🥇', '🥈', '🥉', '⭐', '🌟', '💫', '✨', '🎖️', '🏅', '🎯', '🔥', '💎', '👑', '🎓', '📚', '✏️', '🎨'] as $emoji)
-                            <span onclick="document.getElementById('icon_url').value='{{ $emoji }}'">{{ $emoji }}</span>
-                            @endforeach
+                    <div class="mb-4">
+                        <label for="icon" class="form-label">
+                            Gambar Icon Badge <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" 
+                               class="form-control @error('icon') is-invalid @enderror" 
+                               id="icon" 
+                               name="icon"
+                               accept="image/*"
+                               onchange="previewIcon(this)"
+                               required>
+                        <div class="form-text">Format: JPG, PNG, GIF, SVG, WEBP. Maksimal 2MB</div>
+                        @error('icon')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div id="iconPreview" class="mt-3" style="display: none;">
+                            <img id="iconPreviewImg" src="" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 12px; border: 2px solid #e9ecef;">
                         </div>
                     </div>
                     
@@ -269,7 +261,10 @@
             </div>
             <div class="card-body">
                 <div class="preview-box">
-                    <div class="preview-icon" id="preview-icon">🏆</div>
+                    <div class="preview-icon" id="preview-icon">
+                        <img src="" alt="Badge Icon" style="max-width: 100px; max-height: 100px; display: none;" id="preview-icon-img">
+                        <div id="preview-icon-placeholder" style="font-size: 3rem; color: #ccc;">📷</div>
+                    </div>
                     <h5 class="fw-bold mb-1" id="preview-name">Nama Badge</h5>
                     <p class="text-muted small mb-0" id="preview-desc">Deskripsi badge</p>
                 </div>
@@ -297,10 +292,24 @@
 
 @push('scripts')
 <script>
-    // Live preview
-    document.getElementById('icon_url').addEventListener('input', function() {
-        document.getElementById('preview-icon').textContent = this.value || '🏆';
-    });
+    function previewIcon(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Preview dalam form
+                document.getElementById('iconPreview').style.display = 'block';
+                document.getElementById('iconPreviewImg').src = e.target.result;
+                
+                // Preview dalam box
+                document.getElementById('preview-icon-img').src = e.target.result;
+                document.getElementById('preview-icon-img').style.display = 'block';
+                document.getElementById('preview-icon-placeholder').style.display = 'none';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    // Live preview for text fields
     document.getElementById('name').addEventListener('input', function() {
         document.getElementById('preview-name').textContent = this.value || 'Nama Badge';
     });

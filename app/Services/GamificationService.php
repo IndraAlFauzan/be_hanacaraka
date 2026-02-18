@@ -175,7 +175,7 @@ class GamificationService
                     'id' => $badge->id,
                     'name' => $badge->name,
                     'description' => $badge->description,
-                    'icon_url' => $badge->icon_url,
+                    'icon_url' => $badge->icon_path ? asset('storage/' . $badge->icon_path) : null,
                 ];
             }
         }

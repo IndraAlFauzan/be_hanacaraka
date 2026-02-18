@@ -32,7 +32,7 @@ class BadgeService
             'id' => $badge->id,
             'name' => $badge->name,
             'description' => $badge->description,
-            'icon_url' => $badge->icon_url,
+            'icon_url' => $badge->icon_path ? asset('storage/' . $badge->icon_path) : null,
             'requirement_type' => $badge->criteria_type,
             'requirement_value' => $badge->criteria_value,
             'earned_at' => $badge->pivot->earned_at,

@@ -32,6 +32,11 @@ class MaterialService
             );
         }
 
+        // Ensure content_markdown has a value (default to empty string if null)
+        if (!isset($data['content_markdown']) || $data['content_markdown'] === null) {
+            $data['content_markdown'] = '';
+        }
+
         return Material::create($data);
     }
 
@@ -57,6 +62,11 @@ class MaterialService
                 'materials',
                 'material'
             );
+        }
+
+        // Ensure content_markdown has a value (default to empty string if null)
+        if (!isset($data['content_markdown']) || $data['content_markdown'] === null) {
+            $data['content_markdown'] = '';
         }
 
         $material->update($data);
