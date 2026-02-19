@@ -32,3 +32,4 @@ docker/nginx/ssl/*.key
 # Documentation (keep in version control by removing this)
 # /docs
 /docs
+/.env.example
