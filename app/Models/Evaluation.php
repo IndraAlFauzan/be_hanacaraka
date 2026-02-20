@@ -13,6 +13,8 @@ class Evaluation extends Model
 
     protected $fillable = [
         'stage_id',
+        'title',
+        'description',
         'character_target',
         'reference_image_url',
         'min_similarity_score',

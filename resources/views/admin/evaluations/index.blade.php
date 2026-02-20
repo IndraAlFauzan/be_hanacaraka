@@ -36,10 +36,12 @@
                         <th style="width: 60px;">ID</th>
                         <th style="width: 100px;">Referensi</th>
                         <th style="width: 100px;">Karakter</th>
+                        <th style="width: 200px;">Judul</th>
+                        <th style="width: 250px;">Deskripsi</th>
                         <th>Stage</th>
                         <th style="width: 140px;">Min. Similarity</th>
                         <th style="width: 120px;">Submissions</th>
-                        <th style="width: 100px;">Aksi</th>
+                        <th style="width: 140px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -65,6 +67,24 @@
                             </div>
                         </td>
                         <td>
+                            @if($evaluation->title)
+                                <div class="fw-semibold text-truncate" style="max-width: 200px;" title="{{ $evaluation->title }}">
+                                    {{ $evaluation->title }}
+                                </div>
+                            @else
+                                <span class="text-muted fst-italic">-</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($evaluation->description)
+                                <div class="text-muted text-truncate" style="max-width: 250px;" title="{{ $evaluation->description }}">
+                                    {{ $evaluation->description }}
+                                </div>
+                            @else
+                                <span class="text-muted fst-italic">-</span>
+                            @endif
+                        </td>
+                        <td>
                             <span class="badge badge-soft-info">
                                 <i class="bi bi-collection me-1"></i>{{ $evaluation->stage->title }}
                             </span>
@@ -84,6 +104,12 @@
                         </td>
                         <td>
                             <div class="action-buttons">
+                                <a href="{{ route('admin.evaluations.show', $evaluation->id) }}" 
+                                   class="btn btn-sm btn-icon btn-outline-info" 
+                                   data-bs-toggle="tooltip" 
+                                   title="Detail">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{{ route('admin.evaluations.edit', $evaluation->id) }}" 
                                    class="btn btn-sm btn-icon btn-outline-primary" 
                                    data-bs-toggle="tooltip" 
@@ -102,7 +128,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="9">
                             <div class="empty-state">
                                 <div class="empty-state-icon">
                                     <i class="bi bi-brush"></i>

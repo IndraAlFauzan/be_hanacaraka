@@ -25,7 +25,7 @@ class StageResource extends JsonResource
             'level' => new LevelResource($this->whenLoaded('level')),
             'materials' => MaterialResource::collection($this->whenLoaded('materials')),
             'quizzes' => QuizResource::collection($this->whenLoaded('quizzes')),
-            'evaluations' => EvaluationResource::collection($this->whenLoaded('evaluations')),
+            'drawing_challenges' => DrawingChallengeResource::collection($this->whenLoaded('evaluations')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

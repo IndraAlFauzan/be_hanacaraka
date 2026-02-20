@@ -41,6 +41,15 @@ class EvaluationWebController extends Controller
         return view('admin.evaluations.create', compact('stages'));
     }
 
+    public function show(string $id): View
+    {
+        $evaluation = Evaluation::with(['stage.level', 'submissions.user'])
+            ->withCount('submissions')
+            ->findOrFail($id);
+
+        return view('admin.evaluations.show', compact('evaluation'));
+    }
+
     public function store(StoreEvaluationRequest $request): RedirectResponse
     {
         Evaluation::create($request->validated());

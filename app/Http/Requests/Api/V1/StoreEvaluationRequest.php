@@ -17,6 +17,8 @@ class StoreEvaluationRequest extends FormRequest
     {
         return [
             'stage_id' => 'required|exists:stages,id',
+            'title' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'character_target' => 'required|string|max:10',
             'reference_image_url' => 'required|url',
             'min_similarity_score' => 'numeric|min:0|max:100',

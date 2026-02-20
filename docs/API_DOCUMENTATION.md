@@ -543,9 +543,9 @@ Get quiz untuk stage.
 
 ---
 
-### GET `/stages/{stageId}/evaluation`
+### GET `/stages/{stageId}/drawing`
 
-Get evaluation (drawing challenge) untuk stage.
+Get drawing challenge untuk stage (untuk evaluation_type: drawing/both).
 
 **Response:**
 
@@ -553,13 +553,13 @@ Get evaluation (drawing challenge) untuk stage.
 {
     "success": true,
     "data": {
-        "evaluation": {
-            "id": 1,
-            "stage_id": 1,
-            "character_target": "ꦲ",
-            "reference_image_url": "/storage/aksara/Ha.png",
-            "min_similarity_score": 70
-        },
+        "id": 1,
+        "stage_id": 1,
+        "character_target": "ꦲ",
+        "title": "Menggambar Aksara Ha",
+        "description": "Gambar aksara Ha dengan benar sesuai dengan referensi yang diberikan",
+        "reference_image_url": "/storage/aksara/Ha.png",
+        "min_similarity_score": 70,
         "user_attempts": 3,
         "user_best_score": 85.5
     }
@@ -627,7 +627,7 @@ Submit gambar aksara (untuk evaluation_type: drawing/both).
 
 > ⚠️ **Note:** `similarity_score` dihitung oleh TFLite model di mobile app, lalu dikirim ke backend.
 
-**Response (Lulus):**
+**Response (200 - Lulus):**
 
 ```json
 {
@@ -635,16 +635,43 @@ Submit gambar aksara (untuk evaluation_type: drawing/both).
     "data": {
         "result_id": 456,
         "similarity_score": 85.5,
+        "user_drawing_url": "/storage/drawings/drawing_2_1708425345.jpg",
         "is_passed": true,
         "xp_earned": 15,
         "level_up": false,
         "stage_completed": true,
-        "new_badges": [...],
+        "new_badges": [
+            {
+                "id": 3,
+                "name": "First Victory",
+                "description": "Complete your first stage",
+                "icon_url": "/storage/badges/first_victory.png"
+            }
+        ],
         "next_stage_unlocked": {
             "id": 2,
             "title": "Aksara Na",
             "stage_number": 2
         }
+    }
+}
+```
+
+**Response (200 - Tidak Lulus):**
+
+```json
+{
+    "success": true,
+    "data": {
+        "result_id": 457,
+        "similarity_score": 45.2,
+        "user_drawing_url": "/storage/drawings/drawing_2_1708425456.jpg",
+        "is_passed": false,
+        "xp_earned": 0,
+        "level_up": false,
+        "stage_completed": false,
+        "new_badges": [],
+        "next_stage_unlocked": null
     }
 }
 ```
@@ -1141,22 +1168,52 @@ Hapus quiz.
 
 ---
 
-## ✏️ Evaluation Management
+## ✏️ Drawing Challenge Management
 
-### POST `/admin/evaluations`
+### POST `/admin/drawing-challenges`
 
-Buat evaluation (drawing challenge).
+Buat drawing challenge (evaluation).
 
 **Request:**
 
 ```json
 {
     "stage_id": 1,
+    "title": "Menggambar Aksara Ha",
+    "description": "Gambar aksara Ha dengan benar sesuai dengan referensi yang diberikan",
     "character_target": "ꦲ",
     "reference_image_url": "/storage/aksara/Ha.png",
     "min_similarity_score": 70
 }
 ```
+
+**Field Descriptions:**
+
+| Field                | Type   | Required | Description                              |
+| -------------------- | ------ | -------- | ---------------------------------------- |
+| stage_id             | int    | ✅       | ID stage                                 |
+| title                | string | ❌       | Judul challenge (max 255 karakter)       |
+| description          | string | ❌       | Deskripsi/instruksi (max 1000 karakter)  |
+| character_target     | string | ✅       | Karakter aksara Jawa yang harus digambar |
+| reference_image_url  | string | ✅       | URL gambar referensi                     |
+| min_similarity_score | number | ✅       | Skor minimum untuk lulus (0-100)         |
+
+**Response (201):**
+
+````json
+{
+    "success": true,
+    "message": "Drawing challenge created successfully",
+    "data": {
+        "id": 1,
+        "stage_id": 1,
+        "character_target": "ꦲ",
+        "title": "Menggambar Aksara Ha",
+        "description": "Gambar aksara Ha dengan benar sesuai dengan referensi yang diberikan",
+        "reference_image_url": "/storage/aksara/Ha.png",
+        "min_similarity_score": 70
+    }
+}
 
 ---
 
@@ -1181,7 +1238,7 @@ Upload file gambar (multipart/form-data).
         "filename": "uuid.jpg"
     }
 }
-```
+````
 
 ---
 
@@ -1336,15 +1393,15 @@ Hapus file gambar.
 
 ### Learning Content
 
-| Method | Endpoint                  | Description      |
-| ------ | ------------------------- | ---------------- |
-| GET    | `/levels`                 | List levels      |
-| GET    | `/levels/{id}`            | Level detail     |
-| GET    | `/stages`                 | List stages      |
-| GET    | `/stages/{id}`            | Stage detail     |
-| GET    | `/stages/{id}/materials`  | Stage materials  |
-| GET    | `/stages/{id}/quiz`       | Stage quiz       |
-| GET    | `/stages/{id}/evaluation` | Stage evaluation |
+| Method | Endpoint                 | Description                |
+| ------ | ------------------------ | -------------------------- |
+| GET    | `/levels`                | List levels                |
+| GET    | `/levels/{id}`           | Level detail               |
+| GET    | `/stages`                | List stages                |
+| GET    | `/stages/{id}`           | Stage detail               |
+| GET    | `/stages/{id}/materials` | Stage materials            |
+| GET    | `/stages/{id}/quiz`      | Stage quiz                 |
+| GET    | `/stages/{id}/drawing`   | Stage drawing challenge ✅ |
 
 ### Submit & Complete
 
@@ -1401,6 +1458,10 @@ Hapus file gambar.
 | PUT    | `/admin/quizzes/{id}`   | Update quiz       |
 | DELETE | `/admin/quizzes/{id}`   | Delete quiz       |
 | POST   | `/admin/evaluations`    | Create evaluation |
+
+> 🚨 **Deprecated:** Use `/admin/drawing-challenges` instead
+
+| POST | `/admin/drawing-challenges` | Create drawing challenge ✅ |
 
 ### File Management
 

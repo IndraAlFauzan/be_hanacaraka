@@ -339,6 +339,49 @@
                         </div>
                     </div>
                     
+                    <!-- Title -->
+                    <div class="mb-4">
+                        <label class="modern-label">
+                            <i class="bi bi-card-heading"></i>
+                            Judul
+                        </label>
+                        <input type="text" 
+                               class="form-control modern-input @error('title') is-invalid @enderror" 
+                               id="title" 
+                               name="title" 
+                               value="{{ old('title') }}"
+                               maxlength="255"
+                               placeholder="Contoh: Menggambar Aksara Ha">
+                        @error('title')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-hint">
+                            <i class="bi bi-info-circle"></i>
+                            Judul challenge yang akan ditampilkan ke user (opsional)
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label class="modern-label">
+                            <i class="bi bi-text-paragraph"></i>
+                            Deskripsi
+                        </label>
+                        <textarea class="form-control modern-input @error('description') is-invalid @enderror" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  maxlength="1000"
+                                  placeholder="Contoh: Gambar aksara Ha dengan benar sesuai dengan referensi yang diberikan...">{{ old('description') }}</textarea>
+                        @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-hint">
+                            <i class="bi bi-info-circle"></i>
+                            Deskripsi atau instruksi untuk user (opsional, maksimal 1000 karakter)
+                        </div>
+                    </div>
+                    
                     <!-- Character Target -->
                     <div class="mb-4">
                         <label class="modern-label">

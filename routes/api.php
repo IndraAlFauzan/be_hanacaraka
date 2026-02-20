@@ -6,9 +6,8 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\LevelController;
 use App\Http\Controllers\Api\V1\StageController;
 use App\Http\Controllers\Api\V1\MaterialController;
-use App\Http\Controllers\Api\V1\EvaluationController;
 use App\Http\Controllers\Api\V1\QuizController;
-use App\Http\Controllers\Api\V1\ChallengeController;
+use App\Http\Controllers\Api\V1\DrawingController;
 use App\Http\Controllers\Api\V1\ProgressController;
 use App\Http\Controllers\Api\V1\LeaderboardController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -45,8 +44,8 @@ Route::prefix('v1')->group(function () {
         // Materials - All authenticated users
         Route::get('/stages/{stageId}/materials', [MaterialController::class, 'index']);
 
-        // Evaluations - All authenticated users
-        Route::get('/stages/{stageId}/evaluation', [EvaluationController::class, 'show']);
+        // Drawing Challenges - All authenticated users
+        Route::get('/stages/{stageId}/drawing', [DrawingController::class, 'show']);
 
         // Quizzes - All authenticated users
         Route::get('/stages/{stageId}/quiz', [QuizController::class, 'show']);
@@ -77,8 +76,8 @@ Route::prefix('v1')->group(function () {
 
         // Pemain only routes
         Route::middleware('check.role:pemain')->group(function () {
-            // Challenge submission (Drawing)
-            Route::post('/stages/{stageId}/submit-drawing', [ChallengeController::class, 'submitDrawing'])
+            // Drawing submission
+            Route::post('/stages/{stageId}/submit-drawing', [DrawingController::class, 'submit'])
                 ->middleware('throttle:drawing-submission');
 
             // Quiz submission
@@ -114,8 +113,8 @@ Route::prefix('v1')->group(function () {
             Route::put('/materials/{id}', [MaterialController::class, 'update']);
             Route::delete('/materials/{id}', [MaterialController::class, 'destroy']);
 
-            // Evaluations management
-            Route::post('/evaluations', [EvaluationController::class, 'store']);
+            // Drawing Challenges management
+            Route::post('/drawing-challenges', [DrawingController::class, 'store']);
 
             // Quizzes management
             Route::post('/quizzes', [QuizController::class, 'store']);
