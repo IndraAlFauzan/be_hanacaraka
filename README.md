@@ -148,9 +148,7 @@ php artisan serve
 | **Progress**    | 1         | Get user progress           |
 | **Leaderboard** | 2         | Weekly, all-time            |
 
-**Total**: 60+ endpoints
-
-Full endpoint list: [API_DOCUMENTATION.md#api-endpoints](./API_DOCUMENTATION.md#api-endpoints)
+Full endpoint list: [API Documentation](docs/API_DOCUMENTATION.md)
 
 ---
 
